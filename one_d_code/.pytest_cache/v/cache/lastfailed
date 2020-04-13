@@ -1,0 +1,10 @@
+{
+  "oneD_profiles_test.py": true,
+  "oneD_profiles_test.py::TestNFW::()::test__f_function_gives_correct_values_given_different_values_of_x": true,
+  "oneD_profiles_test.py::TestSphericalPowerLaw::()::test__average_convergence_within_einstein_radius_equal_to_one": true,
+  "oneD_profiles_test.py::TestSphericalPowerLaw::()::test__convergence_values_correct": true,
+  "test_one_d_profiles.py": true,
+  "test_one_d_profiles.py::TestLensingProfile::()::test__compare_shear_from_deflection_angles_and_convergence": true,
+  "test_one_d_profiles.py::TestNFW::()::test__convergence_gives_correct_values_given_different_values_of_x": true,
+  "test_one_d_profiles.py::TestNFW::()::test__f_function_gives_correct_values_given_different_values_of_x": true
+}
