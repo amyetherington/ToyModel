@@ -2,6 +2,7 @@ import numpy as np
 from astropy import cosmology
 from astropy import units as u
 from scipy.optimize import fsolve
+from scipy import integrate
 
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
 
@@ -55,24 +56,10 @@ class LensProfile:
         return (4 * np.pi * einstein_radius**2 * sigma_crit)/1.989e30
 
 
+class LightProfile:
+    pass
 
-class SphericalPowerLaw(LensProfile):
-    def __init__(self, einstein_radius, slope, z_s, z_l):
-        LensProfile.__init__(self, z_l, z_s)
-        self.einstein_radius = einstein_radius
-        self.slope = slope
-
-    def convergence_from_radii(self, radii):
-        kappa = np.divide((3-self.slope), 2) * np.divide(self.einstein_radius, radii)**(self.slope-1)
-
-        return kappa
-
-    def deflection_angles_from_radii(self, radii):
-        alpha = self.einstein_radius * np.divide(self.einstein_radius, radii)**(self.slope-2)
-
-        return alpha
-
-class Hernquist(LensProfile):
+class Hernquist(LensProfile, LightProfile):
     def __init__(self, mass, r_eff, z_s, z_l):
         LensProfile.__init__(self, z_l, z_s)
         self.mass = mass
@@ -111,13 +98,20 @@ class Hernquist(LensProfile):
 
         return 2 * self.kappa_s * self.r_s * np.divide(x * (1-f), x**2-1)
 
+    def two_dimensional_mass_enclosed_within_effective_radius(self):
+        r_eff = self.r_eff
 
+        integrand = lambda r: 2 * np.pi * r * self.surface_mass_density_from_radii(radii=r)
 
+        mass = integrate.quad(integrand, 0, r_eff)[0] / (
+               np.pi * r_eff**2)
 
+        return mass
 
+class DarkMatterProfile:
+    pass
 
-
-class NFW_Keeton(LensProfile):
+class NFW_Keeton(LensProfile, DarkMatterProfile):
     def __init__(self, m200, concentration, z_s, z_l):
         LensProfile.__init__(self, z_l, z_s)
         self.m200 = m200
@@ -155,8 +149,7 @@ class NFW_Keeton(LensProfile):
 
         return alpha
 
-
-class NFW_Bartelmann(LensProfile):
+class NFW_Bartelmann(LensProfile, DarkMatterProfile):
     def __init__(self, m200, concentration, z_s, z_l):
         LensProfile.__init__(self, z_l, z_s)
         self.m200 = m200
@@ -195,7 +188,7 @@ class NFW_Bartelmann(LensProfile):
 
         return alpha
 
-class NFW_Hilbert(LensProfile):
+class NFW_Hilbert(LensProfile, DarkMatterProfile):
     def __init__(self, m200, concentration, z_s, z_l):
         LensProfile.__init__(self, z_l, z_s)
         self.m200 = m200
@@ -236,18 +229,33 @@ class NFW_Hilbert(LensProfile):
 
 
 class CombinedProfile(LensProfile):
-    def __init__(self, mass_profiles, z_l, z_s):
+    def __init__(self, light_profile, dm_profile, z_s, z_l):
         LensProfile.__init__(self, z_l, z_s)
-        self.mass_profiles = mass_profiles
+        self.light_profile = light_profile
+        self.dm_profile = dm_profile
 
     def density_from_radii(self, radii):
-        return sum([profile.density_from_radii(radii=radii) for profile in self.mass_profiles])
+        return sum(self.light_profile.density_from_radii(radii=radii), self.dm_profile.density_from_radii(radii=radii))
+
+    def surface_mass_density_from_radii(self, radii):
+        return sum(self.light_profile.surface_mass_density_from_radii(radii=radii), self.dm_profile.surface_mass_density_from_radii(radii=radii))
 
     def convergence_from_radii(self, radii):
-        return sum([profile.convergence_from_radii(radii=radii) for profile in self.mass_profiles])
+        return sum(self.light_profile.convergence_from_radii(radii=radii), self.dm_profile.convergence_from_radii(radii=radii))
 
     def deflection_angles_from_radii(self, radii):
-        return sum([profile.deflection_angles_from_radii(radii=radii) for profile in self.mass_profiles])
+        return sum(self.light_profile.deflection_angles_from_radii(radii=radii), self.dm_profile.deflection_angles_from_radii(radii=radii))
+
+    def three_dimensional_mass_enclosed_within_effective_radius(self):
+        r_eff = self.light_profile.r_eff
+
+        integrand = lambda r: 2 * np.pi * r * self.density_from_radii(radii=r)
+
+        mass = integrate.quad(integrand, 0, r_eff)[0] / (
+            (4/3) * np.pi * r_eff**3)
+
+        return mass
+
 
     def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
         einstein_radius = self.einstein_radius_in_arcseconds_from_radii(radii=radii)

@@ -205,6 +205,10 @@ class TestNFW:
         kappa_x_one = NFW.convergence_from_radii(radii=[NFW.scale_radius])
         assert kappa_x_one == pytest.approx(np.array([0]), 1e-3)
 
+class TestHernquist:
+
+
+
 
 class TestCombinedProfile:
     def test__convergence_from_deflections_and_analytic(self):

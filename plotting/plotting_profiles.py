@@ -12,7 +12,9 @@ DM_Bart = profile.NFW_Bartelmann(m200=2.5e12, concentration=3.5, z_l=0.3, z_s=0.
 DM_Keeton = profile.NFW_Keeton(m200=2.5e12, concentration=3.5, z_l=0.3, z_s=0.8)
 DM_Hilbert = profile.NFW_Hilbert(m200=2.5e12, concentration=3.5, z_l=0.3, z_s=0.8)
 Hernquist = profile.Hernquist(mass=3.4e10, r_eff=8.4, z_l=0.3, z_s=0.8)
-total = profile.CombinedProfile(mass_profiles=[Hernquist, DM_Hilbert], z_l=0.3, z_s=0.8)
+total = profile.CombinedProfile(light_profile=Hernquist, dm_profile=DM_Hilbert, z_l=0.3, z_s=0.8)
+
+print(Hernquist.two_dimensional_mass_enclosed_within_effective_radius())
 
 density_NFW = DM_Hilbert.density_from_radii(radii=radii)
 density_Hernquist =Hernquist.density_from_radii(radii=radii)
@@ -35,7 +37,8 @@ alpha_Hilbert = DM_Hilbert.deflection_angles_from_radii(radii=radii)
 k_Bartelmann = 0.5 * ((alpha_Bartelmann / radii) + np.gradient(alpha_Bartelmann, radii[:]))
 k_Keeton = 0.5 * ((alpha_Keeton / radii) + np.gradient(alpha_Keeton, radii[:]))
 
-einstein_radius = 
+print(total.mass_profiles)
+
 
 fig1 = plt.figure(1)
 plt.loglog(radii, density_Hernquist, label='Hernquist')
