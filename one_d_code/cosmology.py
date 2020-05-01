@@ -98,7 +98,7 @@ class Cosmology(object):
         The distance corresponding to c / h, where c is the speed of light 
         and h is the Hubble parameter in units of 1 / time.
         """
-        return (speed_of_light_cgs / self.hubble_constant)
+        return speed_of_light_cgs / self.hubble_constant
 
     def comoving_radial_distance(self, z_i, z_f):
         r"""
