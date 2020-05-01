@@ -57,13 +57,43 @@ class LensProfile:
 
 
 class LightProfile:
-    pass
+    def __init__(self, r_eff):
+        self.r_eff = r_eff
+
+    def density_from_radii(self, radii):
+        raise NotImplementedError()
+
+    def surface_mass_density_from_radii(self, radii):
+        raise NotImplementedError()
+
+    def convergence_from_radii(self, radii):
+        raise NotImplementedError()
+
+    def deflection_angles_from_radii(self, radii):
+        raise NotImplementedError()
+
+    def two_dimensional_mass_enclosed_within_effective_radius(self):
+        integrand = lambda r: 2 * np.pi * r * self.surface_mass_density_from_radii(radii=r)
+
+        mass = integrate.quad(integrand, 0, self.r_eff)[0]
+
+        return mass
+
+    def three_dimensional_mass_enclosed_within_effective_radius(self):
+        integrand = lambda r: 4 * np.pi * r ** 2 * self.density_from_radii(radii=r)
+
+        mass = integrate.quad(integrand, 0, self.r_eff)[0]
+
+        return mass
+
+
+
 
 class Hernquist(LensProfile, LightProfile):
     def __init__(self, mass, r_eff, z_s, z_l):
         LensProfile.__init__(self, z_l, z_s)
+        LightProfile.__init__(self, r_eff)
         self.mass = mass
-        self.r_eff = r_eff
         self.r_s = self.r_eff/1.8153
         self.rho_s = np.divide(self.mass, 2*np.pi*self.r_s**3)
         self.kappa_s = self.rho_s * self.r_s / self.critical_surface_density_of_lens()
@@ -98,15 +128,6 @@ class Hernquist(LensProfile, LightProfile):
 
         return 2 * self.kappa_s * self.r_s * np.divide(x * (1-f), x**2-1)
 
-    def two_dimensional_mass_enclosed_within_effective_radius(self):
-        r_eff = self.r_eff
-
-        integrand = lambda r: 2 * np.pi * r * self.surface_mass_density_from_radii(radii=r)
-
-        mass = integrate.quad(integrand, 0, r_eff)[0] / (
-               np.pi * r_eff**2)
-
-        return mass
 
 class DarkMatterProfile:
     pass
@@ -228,23 +249,27 @@ class NFW_Hilbert(LensProfile, DarkMatterProfile):
         return alpha
 
 
-class CombinedProfile(LensProfile):
-    def __init__(self, light_profile, dm_profile, z_s, z_l):
-        LensProfile.__init__(self, z_l, z_s)
+
+class CombinedProfile(LensProfile, LightProfile, DarkMatterProfile):
+    def __init__(self, light_profile, dm_profile, z_s, z_l, r_eff):
+        LightProfile.__init__(self, r_eff)
+        LensProfile.__init__(self, z_s, z_l)
+        DarkMatterProfile.__init__(self)
         self.light_profile = light_profile
         self.dm_profile = dm_profile
 
+
     def density_from_radii(self, radii):
-        return sum(self.light_profile.density_from_radii(radii=radii), self.dm_profile.density_from_radii(radii=radii))
+        return sum([self.light_profile.density_from_radii(radii=radii), self.dm_profile.density_from_radii(radii=radii)])
 
     def surface_mass_density_from_radii(self, radii):
-        return sum(self.light_profile.surface_mass_density_from_radii(radii=radii), self.dm_profile.surface_mass_density_from_radii(radii=radii))
+        return sum([self.light_profile.surface_mass_density_from_radii(radii=radii), self.dm_profile.surface_mass_density_from_radii(radii=radii)])
 
     def convergence_from_radii(self, radii):
-        return sum(self.light_profile.convergence_from_radii(radii=radii), self.dm_profile.convergence_from_radii(radii=radii))
+        return sum([self.light_profile.convergence_from_radii(radii=radii), self.dm_profile.convergence_from_radii(radii=radii)])
 
     def deflection_angles_from_radii(self, radii):
-        return sum(self.light_profile.deflection_angles_from_radii(radii=radii), self.dm_profile.deflection_angles_from_radii(radii=radii))
+        return sum([self.light_profile.deflection_angles_from_radii(radii=radii), self.dm_profile.deflection_angles_from_radii(radii=radii)])
 
     def three_dimensional_mass_enclosed_within_effective_radius(self):
         r_eff = self.light_profile.r_eff
@@ -255,6 +280,20 @@ class CombinedProfile(LensProfile):
             (4/3) * np.pi * r_eff**3)
 
         return mass
+
+    def second_derivative_of_deflection_angles_from_radii(self, radii):
+        alpha = self.deflection_angles_from_radii(radii=radii)
+
+        d_alpha = np.gradient(alpha, radii[:])
+
+        return np.gradient(d_alpha, radii[:])
+
+    def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(self, radii):
+
+        dd_alpha = self.second_derivative_of_deflection_angles_from_radii(radii=radii)
+
+        einstein_radius = self.einstein_radius_in_arcseconds_from_radii()
+
 
 
     def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
