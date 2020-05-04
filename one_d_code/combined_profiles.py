@@ -14,28 +14,11 @@ class CombinedProfile(lp.LensProfile):
     # TODO : The key difference is that the CombinedProfile you receive a list of instances of profiles, as opposed to be
     # TODO : a combined light and dark profile. This way it can use the values of their parameters.
 
-    def __init__(self, light_profiles=None, dark_profiles=None):
+    def __init__(self, profiles=None):
+        self.profiles = profiles or [] # If None, the profiles default to an empty list.
 
-        # TODO : Not sure if you need to separate light_profile and dark_profiles anyway, but keeping this in case.
-
-        self.light_profiles = light_profiles or [] # If None, the light profiles default to an empty list.
-        self.dark_profiles = dark_profiles or [] # same for dark.
-
-        # TODO : The LensProfile requires the redshifts of the light and dark profiles, which we can extract from the
-        # TODO : lists. I'm going to assume there is no input error (e.g. the light profile and dark profiles has the
-        # TODO : the same redshifts input, but you couldd check this and raise an error.
-
-        # TODO : This should really be a property, like effective_radius.
-
+        # TODO : Check input redshifts and raise an error
         super().__init__(z_l=self.profiles[0].z_l, z_s=self.profiles[0].z_s)
-
-    # TODO : You  may just need to pass profiles to this class and use this?
-    
-    @property
-    def profiles(self):
-        return self.light_profiles + self.dark_profiles
-
-    # TODO : By using a list of profiles these methods get a lot simpler, as we can just iterate over all profiles.
 
     def density_from_radii(self, radii):
         return sum(
@@ -56,10 +39,6 @@ class CombinedProfile(lp.LensProfile):
         return sum(
             [profile.deflection_angles_from_radii(radii=radii) for profile in self.profiles]
         )
-
-
-    # TODO : Okay, so you n eed to use the effective radii of the Henrquist to get the 3D mass. How can we get the
-    # Todo : effective radius of our combined profile? We can extract it via a filter.
 
     # TODO : There is a unit test for this - I would put print statements in this function to see exactly what its doing.
 
