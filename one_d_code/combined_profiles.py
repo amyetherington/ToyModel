@@ -29,8 +29,8 @@ class CombinedProfile(lp.LensProfile):
 
         super().__init__(z_l=self.profiles[0].z_l, z_s=self.profiles[0].z_s)
 
-    # tODO : You  may just need to pass profiles to this class and use this?
-
+    # TODO : You  may just need to pass profiles to this class and use this?
+    
     @property
     def profiles(self):
         return self.light_profiles + self.dark_profiles
@@ -57,15 +57,6 @@ class CombinedProfile(lp.LensProfile):
             [profile.deflection_angles_from_radii(radii=radii) for profile in self.profiles]
         )
 
-    # TODO : Generalize this functioon foro any radii.
-
-    def three_dimensional_mass_enclosed_within_radii(self, radii):
-
-        integrand = lambda r: 2 * np.pi * r * self.density_from_radii(radii=r)
-
-        mass = integrate.quad(integrand, 0, radii)[0] / ((4 / 3) * np.pi * radii ** 3)
-
-        return mass
 
     # TODO : Okay, so you n eed to use the effective radii of the Henrquist to get the 3D mass. How can we get the
     # Todo : effective radius of our combined profile? We can extract it via a filter.
@@ -89,11 +80,13 @@ class CombinedProfile(lp.LensProfile):
 
         return effective_radii[0]
 
-    # TODO : YAY
-
     @property
     def three_dimensional_mass_enclosed_within_effective_radius(self):
         return self.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
+
+    @property
+    def two_dimensional_mass_enclosed_within_effective_radius(self):
+        return self.two_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
 
     def second_derivative_of_deflection_angles_from_radii(self, radii):
         alpha = self.deflection_angles_from_radii(radii=radii)
@@ -102,7 +95,7 @@ class CombinedProfile(lp.LensProfile):
 
         return np.gradient(d_alpha, radii[:])
 
-    # TODO : This should return something?
+    # TODO : This should return something
 
     def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(
         self, radii
