@@ -1,14 +1,13 @@
 import numpy as np
+from astropy import constants as const
 from astropy import cosmology
 from astropy import units as u
-from scipy.optimize import fsolve
 from scipy import integrate
-from astropy import constants as const
 
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
 
-class LensProfile:
 
+class LensProfile:
     def __init__(self, z_l, z_s):
         self.z_s = z_s
         self.z_l = z_l
@@ -56,7 +55,10 @@ class LensProfile:
         D_ls = cosmo.angular_diameter_distance_z1z2(self.z_l, self.z_s).to(u.kpc)
 
         sigma_crit = (
-                np.divide(const.c.to("kpc/s") ** 2, 4 * np.pi * const.G.to("kpc3 / (Msun s2)")) * np.divide(D_s, D_l * D_ls)
+            np.divide(
+                const.c.to("kpc/s") ** 2, 4 * np.pi * const.G.to("kpc3 / (Msun s2)")
+            )
+            * np.divide(D_s, D_l * D_ls)
         ).value
 
         return sigma_crit
@@ -64,7 +66,7 @@ class LensProfile:
     def einstein_mass_in_solar_masses_from_radii(self, radii):
 
         einstein_radius_radians = (
-                self.einstein_radius_in_kpc_from_radii(radii=radii) * u.arcsec
+            self.einstein_radius_in_kpc_from_radii(radii=radii) * u.arcsec
         ).to(u.rad)
 
         D_l = cosmo.angular_diameter_distance(self.z_l).to(u.m)
@@ -87,7 +89,9 @@ class LensProfile:
 
     @property
     def three_dimensional_mass_enclosed_within_effective_radius(self):
-        return self.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
+        return self.three_dimensional_mass_enclosed_within_radii(
+            radii=self.effective_radius
+        )
 
     def three_dimensional_mass_enclosed_within_radii(self, radii):
 
@@ -109,10 +113,10 @@ class LensProfile:
             x < 1,
             (np.divide(1, np.sqrt(1 - x ** 2)) * np.arctanh(np.sqrt(1 - x ** 2))),
             x,
-            )
+        )
         f = np.where(
             x > 1,
             (np.divide(1, np.sqrt(x ** 2 - 1)) * np.arctan(np.sqrt(x ** 2 - 1))),
             f,
-            )
+        )
         return f

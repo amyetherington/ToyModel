@@ -1,8 +1,6 @@
 import numpy as np
 from astropy import cosmology
 from astropy import units as u
-from scipy.optimize import fsolve
-from scipy import integrate
 
 from one_d_code import lens_profile as lp
 
@@ -16,28 +14,31 @@ class SphericalPowerLaw(lp.LensProfile):
         self.slope = slope
 
     def density_from_radii(self, radii):
-        rho = np.divide(self.einstein_radius, radii**self.slope)
+        rho = np.divide(self.einstein_radius, radii ** self.slope)
 
         return rho
 
     def surface_mass_density_from_radii(self, radii):
-        rho = np.divide((3-self.slope), 2)*np.divide(1, radii**(self.slope-1))
+        rho = np.divide((3 - self.slope), 2) * np.divide(1, radii ** (self.slope - 1))
 
         return rho
 
     def convergence_from_radii(self, radii):
-        kappa = np.divide((3-self.slope), 2) * np.divide(self.einstein_radius, radii)**(self.slope-1)
+        kappa = np.divide((3 - self.slope), 2) * np.divide(
+            self.einstein_radius, radii
+        ) ** (self.slope - 1)
 
         return kappa
 
     def deflection_angles_from_radii(self, radii):
-        alpha = self.einstein_radius * np.divide(self.einstein_radius, radii)**(self.slope-2)
+        alpha = self.einstein_radius * np.divide(self.einstein_radius, radii) ** (
+            self.slope - 2
+        )
 
         return alpha
 
 
 class Hernquist(lp.LensProfile):
-
     def __init__(self, mass, effective_radius, z_s, z_l):
 
         # TODO : With only one inheritance we can just use super to call inheritance. If you ever feel like you
@@ -80,7 +81,6 @@ class Hernquist(lp.LensProfile):
 
 
 class NFW_Keeton(lp.LensProfile):
-
     def __init__(self, m200, concentration, z_s, z_l):
 
         super().__init__(z_s=z_s, z_l=z_l)
@@ -102,7 +102,9 @@ class NFW_Keeton(lp.LensProfile):
                 - self.concentration / (1.0 + self.concentration)
             )
         )
-        self.kappa_s = np.divide(self.rho_s * self.r_s, self.critical_surface_density_of_lens)
+        self.kappa_s = np.divide(
+            self.rho_s * self.r_s, self.critical_surface_density_of_lens
+        )
 
     def density_from_radii(self, radii):
 
@@ -128,7 +130,6 @@ class NFW_Keeton(lp.LensProfile):
 
 
 class NFW_Bartelmann(lp.LensProfile):
-
     def __init__(self, m200, concentration, z_s, z_l):
 
         super().__init__(z_l=z_l, z_s=z_s)
@@ -151,8 +152,9 @@ class NFW_Bartelmann(lp.LensProfile):
             )
         )
 
-        self.kappa_s = np.divide(self.rho_s * self.r_s, self.critical_surface_density_of_lens)
-
+        self.kappa_s = np.divide(
+            self.rho_s * self.r_s, self.critical_surface_density_of_lens
+        )
 
     def f_func(self, x):
         f = np.where(
@@ -200,7 +202,6 @@ class NFW_Bartelmann(lp.LensProfile):
 
 
 class NFW_Hilbert(lp.LensProfile):
-
     def __init__(self, m200, concentration, z_s, z_l):
 
         super().__init__(z_l=z_l, z_s=z_s)
@@ -222,7 +223,9 @@ class NFW_Hilbert(lp.LensProfile):
                 - self.concentration / (1.0 + self.concentration)
             )
         )
-        self.kappa_s = np.divide(self.rho_s * self.r_s, self.critical_surface_density_of_lens)
+        self.kappa_s = np.divide(
+            self.rho_s * self.r_s, self.critical_surface_density_of_lens
+        )
 
     def f_func(self, x):
         f = np.where(
@@ -259,6 +262,3 @@ class NFW_Hilbert(lp.LensProfile):
         )
 
         return alpha
-
-
-

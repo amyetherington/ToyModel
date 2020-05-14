@@ -1,13 +1,13 @@
 # tODO : The profiles module is getting pretty long so I moved this here. It also separate the two nicely, as they do different things.
 
+import numpy as np
 from astropy import cosmology
 from astropy import units as u
-import numpy as np
+from one_d_code import lens_profile as lp
 from scipy import integrate
 
-from one_d_code import lens_profile as lp
-
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
+
 
 class CombinedProfile(lp.LensProfile):
 
@@ -15,7 +15,9 @@ class CombinedProfile(lp.LensProfile):
     # TODO : a combined light and dark profile. This way it can use the values of their parameters.
 
     def __init__(self, profiles=None):
-        self.profiles = profiles or [] # If None, the profiles default to an empty list.
+        self.profiles = (
+            profiles or []
+        )  # If None, the profiles default to an empty list.
 
         # TODO : Check input redshifts and raise an error
         super().__init__(z_l=self.profiles[0].z_l, z_s=self.profiles[0].z_s)
@@ -27,7 +29,10 @@ class CombinedProfile(lp.LensProfile):
 
     def surface_mass_density_from_radii(self, radii):
         return sum(
-            [profile.surface_mass_density_from_radii(radii=radii) for profile in self.profiles]
+            [
+                profile.surface_mass_density_from_radii(radii=radii)
+                for profile in self.profiles
+            ]
         )
 
     def convergence_from_radii(self, radii):
@@ -37,14 +42,20 @@ class CombinedProfile(lp.LensProfile):
 
     def deflection_angles_from_radii(self, radii):
         return sum(
-            [profile.deflection_angles_from_radii(radii=radii) for profile in self.profiles]
+            [
+                profile.deflection_angles_from_radii(radii=radii)
+                for profile in self.profiles
+            ]
         )
 
     # TODO : There is a unit test for this - I would put print statements in this function to see exactly what its doing.
 
     @property
     def effective_radius(self):
-        effective_radii = [profile.effective_radius if hasattr(profile, "effective_radius") else None for profile in self.profiles]
+        effective_radii = [
+            profile.effective_radius if hasattr(profile, "effective_radius") else None
+            for profile in self.profiles
+        ]
 
         # The list above has None for everyy profile without an effective radius attribute. We want to remove these.
 
@@ -55,26 +66,42 @@ class CombinedProfile(lp.LensProfile):
         if len(effective_radii) == 0:
             raise ValueError("There are no effective radii in this Combined Profile")
         elif len(effective_radii) > 1:
-            raise ValueError("There are multiple effective radii in this Combined Profile, it is ambiguous which to use.")
+            raise ValueError(
+                "There are multiple effective radii in this Combined Profile, it is ambiguous which to use."
+            )
 
         return effective_radii[0]
 
     @property
     def three_dimensional_mass_enclosed_within_effective_radius(self):
-        return sum([profile.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius) for profile in self.profiles]
-                   )
+        return sum(
+            [
+                profile.three_dimensional_mass_enclosed_within_radii(
+                    radii=self.effective_radius
+                )
+                for profile in self.profiles
+            ]
+        )
 
     @property
     def two_dimensional_mass_enclosed_within_effective_radius(self):
-        return sum([profile.two_dimensional_mass_enclosed_within_radii(radii=self.effective_radius) for profile in self.profiles]
-                   )
+        return sum(
+            [
+                profile.two_dimensional_mass_enclosed_within_radii(
+                    radii=self.effective_radius
+                )
+                for profile in self.profiles
+            ]
+        )
 
     def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(
         self, radii
     ):
         einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        return self.second_derivative_of_deflection_angles_from_radii(radii=einstein_radius)
+        return self.second_derivative_of_deflection_angles_from_radii(
+            radii=einstein_radius
+        )
 
     def mean_convergence_at_einstein_radius_from_radii(self, radii):
 
@@ -83,7 +110,8 @@ class CombinedProfile(lp.LensProfile):
         integrand = lambda r: 2 * np.pi * r * self.convergence_from_radii(radii=r)
 
         av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
-                np.pi * einstein_radius ** 2)
+            np.pi * einstein_radius ** 2
+        )
 
         return av_kappa
 

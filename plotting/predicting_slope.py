@@ -1,9 +1,6 @@
-import one_d_profiles as profile
-import numpy as np
 import matplotlib.pyplot as plt
-import scipy.optimize as opt
-import math
-
+import numpy as np
+import one_d_profiles as profile
 
 fig_path = "/Users/dgmt59/Documents/Plots/slope_v_radial_range/"
 

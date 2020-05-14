@@ -1,9 +1,7 @@
-from one_d_code import one_d_profiles as profile
-from one_d_code import combined_profiles as cp
-import numpy as np
 import matplotlib.pyplot as plt
-import scipy.optimize as opt
-import math
+import numpy as np
+from one_d_code import combined_profiles as cp
+from one_d_code import one_d_profiles as profile
 
 fig_path = "/Users/dgmt59/Documents/Plots/1D/"
 
@@ -54,7 +52,7 @@ plt.loglog(radii, kappa_via_sigma_NFW, label="kappa sig")
 plt.legend()
 
 fig4 = plt.figure(4)
-plt.loglog(radii, rho_NFW, label= "rho")
+plt.loglog(radii, rho_NFW, label="rho")
 plt.loglog(radii, kappa_NFW, label="kappa")
 plt.loglog(radii, kappa_via_sigma_NFW, label="kappa sig")
 plt.legend()
