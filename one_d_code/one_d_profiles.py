@@ -9,6 +9,33 @@ from one_d_code import lens_profile as lp
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
 
 
+class SphericalPowerLaw(lp.LensProfile):
+    def __init__(self, einstein_radius, slope, z_s, z_l):
+        super().__init__(z_l=z_l, z_s=z_s)
+        self.einstein_radius = einstein_radius
+        self.slope = slope
+
+    def density_from_radii(self, radii):
+        rho = np.divide(self.einstein_radius, radii**self.slope)
+
+        return rho
+
+    def surface_mass_density_from_radii(self, radii):
+        rho = np.divide((3-self.slope), 2)*np.divide(1, radii**(self.slope-1))
+
+        return rho
+
+    def convergence_from_radii(self, radii):
+        kappa = np.divide((3-self.slope), 2) * np.divide(self.einstein_radius, radii)**(self.slope-1)
+
+        return kappa
+
+    def deflection_angles_from_radii(self, radii):
+        alpha = self.einstein_radius * np.divide(self.einstein_radius, radii)**(self.slope-2)
+
+        return alpha
+
+
 class Hernquist(lp.LensProfile):
 
     def __init__(self, mass, effective_radius, z_s, z_l):
@@ -52,13 +79,11 @@ class Hernquist(lp.LensProfile):
         return 2 * self.kappa_s * self.r_s * np.divide(x * (1 - f), x ** 2 - 1)
 
 
-# TODO : The Dark Matter Profile did nothing, so I removed it. If you feel like you need it let me know.
-
 class NFW_Keeton(lp.LensProfile):
 
     def __init__(self, m200, concentration, z_s, z_l):
 
-        super().__init__(self, z_l, z_s)
+        super().__init__(z_s=z_s, z_l=z_l)
 
         self.m200 = m200
         self.concentration = concentration
@@ -77,7 +102,7 @@ class NFW_Keeton(lp.LensProfile):
                 - self.concentration / (1.0 + self.concentration)
             )
         )
-        self.kappa_s = self.rho_s * self.r_s / self.critical_surface_density_of_lens()
+        self.kappa_s = np.divide(self.rho_s * self.r_s, self.critical_surface_density_of_lens)
 
     def density_from_radii(self, radii):
 
@@ -106,7 +131,7 @@ class NFW_Bartelmann(lp.LensProfile):
 
     def __init__(self, m200, concentration, z_s, z_l):
 
-        super().__init__(self, z_l, z_s)
+        super().__init__(z_l=z_l, z_s=z_s)
 
         self.m200 = m200
         self.concentration = concentration
@@ -126,9 +151,8 @@ class NFW_Bartelmann(lp.LensProfile):
             )
         )
 
-        self.kappa_s = self.rho_s * self.r_s / self.critical_surface_density_of_lens()
+        self.kappa_s = np.divide(self.rho_s * self.r_s, self.critical_surface_density_of_lens)
 
-    # TODO : This will overwrite f_func at the top.
 
     def f_func(self, x):
         f = np.where(
@@ -160,7 +184,7 @@ class NFW_Bartelmann(lp.LensProfile):
 
         x = np.array(radii / self.r_s)
         f = self.f_func(x)
-        kappa = 2 * self.kappa_s * np.array(f) / (x ** 2 - 1)
+        kappa = np.divide(2 * self.kappa_s, x ** 2 - 1) * np.array(f)
 
         return kappa
 
@@ -179,7 +203,7 @@ class NFW_Hilbert(lp.LensProfile):
 
     def __init__(self, m200, concentration, z_s, z_l):
 
-        super.__init__(z_l, z_s)
+        super().__init__(z_l=z_l, z_s=z_s)
 
         self.m200 = m200
         self.concentration = concentration
@@ -198,7 +222,7 @@ class NFW_Hilbert(lp.LensProfile):
                 - self.concentration / (1.0 + self.concentration)
             )
         )
-        self.kappa_s = self.rho_s * self.r_s / self.critical_surface_density_of_lens()
+        self.kappa_s = np.divide(self.rho_s * self.r_s, self.critical_surface_density_of_lens)
 
     def f_func(self, x):
         f = np.where(

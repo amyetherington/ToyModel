@@ -61,28 +61,31 @@ class CombinedProfile(lp.LensProfile):
 
     @property
     def three_dimensional_mass_enclosed_within_effective_radius(self):
-        return self.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
+        return sum([profile.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius) for profile in self.profiles]
+                   )
 
     @property
     def two_dimensional_mass_enclosed_within_effective_radius(self):
-        return self.two_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
-
-    def second_derivative_of_deflection_angles_from_radii(self, radii):
-        alpha = self.deflection_angles_from_radii(radii=radii)
-
-        d_alpha = np.gradient(alpha, radii[:])
-
-        return np.gradient(d_alpha, radii[:])
-
-    # TODO : This should return something
+        return sum([profile.two_dimensional_mass_enclosed_within_radii(radii=self.effective_radius) for profile in self.profiles]
+                   )
 
     def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(
         self, radii
     ):
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        dd_alpha = self.second_derivative_of_deflection_angles_from_radii(radii=radii)
+        return self.second_derivative_of_deflection_angles_from_radii(radii=einstein_radius)
 
-        einstein_radius = self.einstein_radius_in_arcseconds_from_radii()
+    def mean_convergence_at_einstein_radius_from_radii(self, radii):
+
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        integrand = lambda r: 2 * np.pi * r * self.convergence_from_radii(radii=r)
+
+        av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
+                np.pi * einstein_radius ** 2)
+
+        return av_kappa
 
     def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
 

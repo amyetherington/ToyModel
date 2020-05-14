@@ -3,6 +3,7 @@ from astropy import cosmology
 from astropy import units as u
 from scipy.optimize import fsolve
 from scipy import integrate
+from astropy import constants as const
 
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
 
@@ -32,33 +33,30 @@ class LensProfile:
 
         return gamma
 
-    def tangential_eiginvalue_from_radii(self, radii):
+    def tangential_eigenvalue_from_radii(self, radii):
 
         kappa = self.convergence_from_radii(radii=radii)
         gamma = self.shear_from_radii(radii=radii)
 
         return 1 - kappa - gamma
 
-    def einstein_radius_in_arcseconds_from_radii(self, radii):
+    def einstein_radius_in_kpc_from_radii(self, radii):
 
-        lambda_t = self.tangential_eiginvalue_from_radii(radii=radii)
+        lambda_t = self.tangential_eigenvalue_from_radii(radii=radii)
 
         index = np.argmin(np.abs(lambda_t))
 
         return radii[index]
 
-    # TODO : If a functioon has no inputs, you probably want it to be a property. This means you dont need the () when
-    # TODO : you call it.
-
     @property
     def critical_surface_density_of_lens(self):
 
-        D_s = cosmo.angular_diameter_distance(self.z_s).to(u.m)
-        D_l = cosmo.angular_diameter_distance(self.z_l).to(u.m)
-        D_ls = cosmo.angular_diameter_distance_z1z2(self.z_l, self.z_s).to(u.m)
+        D_s = cosmo.angular_diameter_distance(self.z_s).to(u.kpc)
+        D_l = cosmo.angular_diameter_distance(self.z_l).to(u.kpc)
+        D_ls = cosmo.angular_diameter_distance_z1z2(self.z_l, self.z_s).to(u.kpc)
 
         sigma_crit = (
-                np.divide(2.998e8 ** 2, 4 * np.pi * 6.674e-11) * np.divide(D_s, D_l * D_ls)
+                np.divide(const.c.to("kpc/s") ** 2, 4 * np.pi * const.G.to("kpc3 / (Msun s2)")) * np.divide(D_s, D_l * D_ls)
         ).value
 
         return sigma_crit
@@ -66,7 +64,7 @@ class LensProfile:
     def einstein_mass_in_solar_masses_from_radii(self, radii):
 
         einstein_radius_radians = (
-                self.einstein_radius_in_arcseconds_from_radii(radii=radii) * u.arcsec
+                self.einstein_radius_in_kpc_from_radii(radii=radii) * u.arcsec
         ).to(u.rad)
 
         D_l = cosmo.angular_diameter_distance(self.z_l).to(u.m)
@@ -87,6 +85,10 @@ class LensProfile:
 
         return mass
 
+    @property
+    def three_dimensional_mass_enclosed_within_effective_radius(self):
+        return self.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
+
     def three_dimensional_mass_enclosed_within_radii(self, radii):
 
         integrand = lambda r: 4 * np.pi * r ** 2 * self.density_from_radii(radii=r)
@@ -95,7 +97,12 @@ class LensProfile:
 
         return mass
 
-    # TODO : Moved this to here as all functions below use it.
+    def second_derivative_of_deflection_angles_from_radii(self, radii):
+        alpha = self.deflection_angles_from_radii(radii=radii)
+
+        d_alpha = np.gradient(alpha, radii[:])
+
+        return np.gradient(d_alpha, radii[:])
 
     def f_func(self, x):
         f = np.where(

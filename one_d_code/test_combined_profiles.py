@@ -23,14 +23,14 @@ class TestCombinedProfile:
 
     def test__effective_radius_from_combined_profile(self):
 
-        combined = cp.CombinedProfile()
+       # combined = cp.CombinedProfile()
 
-        with pytest.raises(ValueError):
-            combined.effective_radius
+      #  with pytest.raises(ValueError):
+      #      combined.effective_radius
 
         hernquist = profiles.Hernquist(effective_radius=1.0, mass=100.0, z_s=0.5, z_l=1.0)
 
-        combined = cp.CombinedProfile(light_profiles=[hernquist])
+        combined = cp.CombinedProfile(profiles=[hernquist])
 
         assert combined.effective_radius == 1.0
 
