@@ -1,0 +1,75 @@
+{
+    "traps": {
+        "Trap": {
+            "density": {
+                "type": "Uniform",
+                "lower_limit": 0.0,
+                "upper_limit": 1.0,
+                "width_modifier": {
+                    "type": "Absolute",
+                    "value": 0.2
+                },
+                "gaussian_limits": {
+                    "lower": 0.0,
+                    "upper": 1.0
+                }
+            },
+            "lifetime": {
+                "type": "Uniform",
+                "lower_limit": 0.0,
+                "upper_limit": 1.0,
+                "width_modifier": {
+                    "type": "Absolute",
+                    "value": 0.2
+                },
+                "gaussian_limits": {
+                    "lower": 0.0,
+                    "upper": 1.0
+                }
+            }
+        }
+    },
+    "model": {
+        "CCDVolume": {
+            "well_max_height": {
+                "type": "Uniform",
+                "lower_limit": 0.0,
+                "upper_limit": 1.0,
+                "width_modifier": {
+                    "type": "Absolute",
+                    "value": 0.2
+                },
+                "gaussian_limits": {
+                    "lower": 0.0,
+                    "upper": 1.0
+                }
+            },
+            "well_notch_depth": {
+                "type": "Uniform",
+                "lower_limit": 0.0,
+                "upper_limit": 1.0,
+                "width_modifier": {
+                    "type": "Absolute",
+                    "value": 0.2
+                },
+                "gaussian_limits": {
+                    "lower": 0.0,
+                    "upper": 1.0
+                }
+            },
+            "well_fill_beta": {
+                "type": "Uniform",
+                "lower_limit": 0.0,
+                "upper_limit": 1.0,
+                "width_modifier": {
+                    "type": "Absolute",
+                    "value": 0.2
+                },
+                "gaussian_limits": {
+                    "lower": 0.0,
+                    "upper": 1.0
+                }
+            }
+        }
+    }
+}
