@@ -1,18 +1,32 @@
-# tODO : The profiles module is getting pretty long so I moved this here. It also separate the two nicely, as they do different things.
-
 import numpy as np
 from astropy import cosmology
 from astropy import units as u
 from one_d_code import lens_profile as lp
-from scipy import integrate
+from scipy import optimize
+from scipy.special import gamma
+
 
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
 
+def Mdyn(rho0,g,Reff,r0=1*u.kpc):
+    return ((4*np.pi*rho0 / (3-g)) * Reff**3 * (Reff/r0)**-g).to('Msun')
+
+def Mein(rho0,g,Rein,r0=1*u.kpc):
+    return ((2*np.pi**1.5 * gamma(0.5*(g-1)) / ((3-g)*gamma(0.5*g))) * rho0 * Rein**3 * (Rein/r0)**-g).to('Msun')
+
+
+def vector_residuals(params, Mdyn_true, Mein_true, Reff, Rein):
+
+    log_rho0, g = params
+
+    rho0 = 10 ** log_rho0 * u.Msun / u.kpc ** 3
+
+    Mdyn_pred = Mdyn(rho0, g, Reff)
+    Mein_pred = Mein(rho0, g, Rein)
+    return np.log10((Mdyn_pred / Mdyn_true).to('')), np.log10((Mein_pred / Mein_true).to(''))
+
 
 class CombinedProfile(lp.LensProfile):
-
-    # TODO : The key difference is that the CombinedProfile you receive a list of instances of profiles, as opposed to be
-    # TODO : a combined light and dark profile. This way it can use the values of their parameters.
 
     def __init__(self, profiles=None):
         self.profiles = (
@@ -48,8 +62,6 @@ class CombinedProfile(lp.LensProfile):
             ]
         )
 
-    # TODO : There is a unit test for this - I would put print statements in this function to see exactly what its doing.
-
     @property
     def effective_radius(self):
         effective_radii = [
@@ -57,11 +69,7 @@ class CombinedProfile(lp.LensProfile):
             for profile in self.profiles
         ]
 
-        # The list above has None for everyy profile without an effective radius attribute. We want to remove these.
-
         effective_radii = list(filter(None, effective_radii))
-
-        # If there are 0 or > 1 effective radii, we should raise an error, else return the value.
 
         if len(effective_radii) == 0:
             raise ValueError("There are no effective radii in this Combined Profile")
@@ -99,25 +107,60 @@ class CombinedProfile(lp.LensProfile):
     ):
         einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        return self.second_derivative_of_deflection_angles_from_radii(
-            radii=einstein_radius
+        index = np.argmin(
+            np.abs(np.array(radii) - (einstein_radius))
         )
 
-    def mean_convergence_at_einstein_radius_from_radii(self, radii):
+        dd_alpha = self.second_derivative_of_deflection_angles_from_radii(
+            radii=radii
+        )
+
+        return dd_alpha[index]
+
+    def convergence_at_einstein_radius_from_radii(self, radii):
 
         einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        integrand = lambda r: 2 * np.pi * r * self.convergence_from_radii(radii=r)
+        kappa = self.convergence_from_radii(radii=einstein_radius)
 
-        av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
-            np.pi * einstein_radius ** 2
-        )
+        return kappa
 
-        return av_kappa
+    def xi_two(self, radii):
+
+        kappa_ein = self.convergence_at_einstein_radius_from_radii(radii=radii)
+
+        dd_alpha_ein = self.second_derivative_of_deflection_angles_at_einstein_radius_from_radii(radii=radii)
+
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        return np.divide(einstein_radius * dd_alpha_ein, 1 - kappa_ein)
+
+    def slope_via_lensing(self, radii):
+
+        xi_two = self.xi_two(radii=radii)
+
+        return np.divide(xi_two, 2) + 2
+
+    def slope_via_dynamics(self, radii):
+
+        mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
+
+        r_ein = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        r_dyn = self.effective_radius
+
+        mass_dyn = self.three_dimensional_mass_enclosed_within_radii(radii=r_dyn)
+
+        init_guess = np.array([7, 2])
+
+        root_finding_data = optimize.root(vector_residuals, init_guess, args=(mass_dyn*u.Msun, mass_ein*u.Msun, r_dyn*u.kpc, r_ein*u.kpc),
+                                          method='hybr', options={'xtol': 0.0001})
+
+        return np.array([10**root_finding_data.x[0], root_finding_data.x[1]])
 
     def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
 
-        einstein_radius = self.einstein_radius_in_arcseconds_from_radii(radii=radii)
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
         index1 = np.argmin(
             np.abs(np.array(radii) - (radii[0] + lower_bound * einstein_radius))
@@ -133,7 +176,7 @@ class CombinedProfile(lp.LensProfile):
     def mask_two_radial_ranges_from_radii(
         self, lower_bound_1, upper_bound_1, lower_bound_2, upper_bound_2, radii
     ):
-        einstein_radius = self.einstein_radius_in_arcseconds_from_radii(radii=radii)
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
         index1 = np.argmin(
             np.abs(np.array(radii) - (radii[0] + lower_bound_1 * einstein_radius))
@@ -208,7 +251,7 @@ class CombinedProfile(lp.LensProfile):
         return np.array([einstein_radius, error])
 
     def best_fit_einstein_mass_in_solar_masses_from_mask_and_radii_and_redshifts(
-        self, radii, mask, z_s, z_l
+        self, radii, mask, z_l
     ):
         einstein_radius_rad = (
             self.best_fit_power_law_einstein_radius_with_error_from_mask_and_radii(
@@ -227,7 +270,7 @@ class CombinedProfile(lp.LensProfile):
     def best_fit_power_law_deflection_angles_coefficients_from_mask_and_radii(
         self, mask, radii
     ):
-        einstein_radius = self.einstein_radius_in_arcseconds_from_radii(radii=radii)
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
         alpha = self.deflection_angles_from_radii(radii=radii)
 
         coeffs, cov = np.polyfit(np.log(radii), np.log(alpha), w=mask, deg=1, cov=True)

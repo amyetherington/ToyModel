@@ -12,7 +12,6 @@
   "test_lens_profile.py": true,
   "test_lens_profile.py::TestEinsteinRadius": true,
   "test_lens_profile.py::TestEinsteinRadius::()::test__mean_Hernquist_convergence_within_einstein_radius_equal_to_one": true,
-  "test_lens_profile.py::TestEinsteinRadius::()::test__mean_NFW_convergence_within_einstein_radius_equal_to_one": true,
   "test_lens_profile.py::TestEinsteinRadius::()::test__mean_combined_convergence_within_einstein_radius_equal_to_one": true,
   "test_lens_profile.py::TestShear": true,
   "test_one_d_profiles.py::TestLensingProfile": true,

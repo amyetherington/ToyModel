@@ -3,8 +3,9 @@ from astropy import constants as const
 from astropy import cosmology
 from astropy import units as u
 from scipy import integrate
+from scipy import optimize
 
-cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
+cosmo = cosmology.Planck15
 
 
 class LensProfile:
@@ -65,17 +66,11 @@ class LensProfile:
 
     def einstein_mass_in_solar_masses_from_radii(self, radii):
 
-        einstein_radius_radians = (
-            self.einstein_radius_in_kpc_from_radii(radii=radii) * u.arcsec
-        ).to(u.rad)
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        D_l = cosmo.angular_diameter_distance(self.z_l).to(u.m)
+        sigma_crit = self.critical_surface_density_of_lens
 
-        einstein_radius = (einstein_radius_radians * D_l).value
-
-        sigma_crit = self.critical_surface_density_of_lens()
-
-        return (4 * np.pi * einstein_radius ** 2 * sigma_crit) / 1.989e30
+        return (4 * np.pi * einstein_radius ** 2 * sigma_crit)
 
     def two_dimensional_mass_enclosed_within_radii(self, radii):
 

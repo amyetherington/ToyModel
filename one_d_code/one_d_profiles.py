@@ -2,9 +2,12 @@ import numpy as np
 from astropy import cosmology
 from astropy import units as u
 
+from colossus.halo.concentration import concentration as col_concentration
+from colossus.cosmology import cosmology as col_cosmology
+
 from one_d_code import lens_profile as lp
 
-cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
+cosmo = cosmology.Planck15
 
 
 class SphericalPowerLaw(lp.LensProfile):
@@ -17,6 +20,8 @@ class SphericalPowerLaw(lp.LensProfile):
         rho = np.divide(self.einstein_radius, radii ** self.slope)
 
         return rho
+
+    # TODO: get surface mass density appropriately normalised
 
     def surface_mass_density_from_radii(self, radii):
         rho = np.divide((3 - self.slope), 2) * np.divide(1, radii ** (self.slope - 1))
@@ -40,9 +45,6 @@ class SphericalPowerLaw(lp.LensProfile):
 
 class Hernquist(lp.LensProfile):
     def __init__(self, mass, effective_radius, z_s, z_l):
-
-        # TODO : With only one inheritance we can just use super to call inheritance. If you ever feel like you
-        # TODO : *need* to do multiple inheritance ask me as its not a rabbit hall worth going down.
 
         super().__init__(z_l=z_l, z_s=z_s)
 
@@ -80,62 +82,16 @@ class Hernquist(lp.LensProfile):
         return 2 * self.kappa_s * self.r_s * np.divide(x * (1 - f), x ** 2 - 1)
 
 
-class NFW_Keeton(lp.LensProfile):
-    def __init__(self, m200, concentration, z_s, z_l):
-
-        super().__init__(z_s=z_s, z_l=z_l)
-
-        self.m200 = m200
-        self.concentration = concentration
-        self.r200 = (
-            self.m200
-            * u.solMass
-            / (1.333 * np.pi * 200 * cosmo.critical_density(self.z_l).to("Msun/kpc**3"))
-        ) ** (1.0 / 3)
-        self.r_s = self.r200.value / self.concentration
-        self.rho_s = self.m200 / (
-            4
-            * np.pi
-            * self.r_s ** 3
-            * (
-                np.log(1.0 + self.concentration)
-                - self.concentration / (1.0 + self.concentration)
-            )
-        )
-        self.kappa_s = np.divide(
-            self.rho_s * self.r_s, self.critical_surface_density_of_lens
-        )
-
-    def density_from_radii(self, radii):
-
-        x = np.array(radii / self.r_s)
-
-        return np.divide(self.rho_s, x * (1 + x) ** 2)
-
-    def convergence_from_radii(self, radii):
-        x = np.array(radii / self.r_s)
-        f = self.f_func(x)
-        kappa = 2 * self.kappa_s * np.divide(1 - np.array(f), x ** 2 - 1)
-
-        return kappa
-
-    def deflection_angles_from_radii(self, radii):
-        x = np.divide(radii, self.r_s)
-        f = self.f_func(x)
-        alpha = (
-            4 * self.kappa_s * self.r_s * np.divide((np.log(x / 2) + np.array(f)), x)
-        )
-
-        return alpha
-
-
 class NFW_Bartelmann(lp.LensProfile):
-    def __init__(self, m200, concentration, z_s, z_l):
+    def __init__(self, m200, z_s, z_l):
 
         super().__init__(z_l=z_l, z_s=z_s)
 
         self.m200 = m200
-        self.concentration = concentration
+        col_cosmo = col_cosmology.setCosmology("planck15")
+        self.concentration = col_concentration(
+            self.m200 * col_cosmo.h, "200c", self.z_l, model="ludlow16"
+        )
         self.r200 = (
             self.m200
             * u.solMass
@@ -202,12 +158,15 @@ class NFW_Bartelmann(lp.LensProfile):
 
 
 class NFW_Hilbert(lp.LensProfile):
-    def __init__(self, m200, concentration, z_s, z_l):
+    def __init__(self, m200, z_s, z_l):
 
         super().__init__(z_l=z_l, z_s=z_s)
 
         self.m200 = m200
-        self.concentration = concentration
+        col_cosmo = col_cosmology.setCosmology("planck15")
+        self.concentration = col_concentration(
+            self.m200 * col_cosmo.h, "200c", self.z_l, model="ludlow16"
+        )
         self.r200 = (
             self.m200
             * u.solMass
