@@ -93,21 +93,8 @@ class TestHernquist:
 
 
 class TestNFW:
-    def test__f_function_gives_correct_values_given_different_values_of_x(self):
-        NFW = profiles.NFW_Keeton(m200=2.5e12, scale_radius=3.2)
-        ## x < 1
-        assert NFW.f_func(x=np.array([0.25, 0.5, 0.75])) == pytest.approx(
-            np.array([2.131, 1.521, 1.202]), 1e-3
-        )
-        ## x > 1
-        assert NFW.f_func(x=np.array([1.25, 1.5, 1.75])) == pytest.approx(
-            np.array([0.858, 0.752, 0.670]), 1e-3
-        )
-        ## x=1
-        assert NFW.f_func(x=np.array([1])) == pytest.approx(np.array([1]), 1e-3)
-
     def test__convergence_equal_to_surface_mass_density_divided_by_sigma_crit(self):
-        NFW = profiles.NFW_Bartelmann(m200=2.5e12, concentration=3.5, z_l=0.3, z_s=0.8)
+        NFW = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=0.8)
         radii = np.arange(0.2, 30, 0.002)
 
         rho = NFW.surface_mass_density_from_radii(radii=radii)
@@ -116,25 +103,9 @@ class TestNFW:
 
         assert kappa == pytest.approx(kappa_via_sigma, 1e-4)
 
-    def test__convergence_Keeton_from_deflections_and_analytic(self):
-        NFW_Keeton = profiles.NFW_Keeton(
-            m200=2.5e12, concentration=3.2, z_s=0.8, z_l=0.3
-        )
-        radii = np.arange(1, 5, 0.00002)
-
-        kappa_analytic = NFW_Keeton.convergence_from_radii(radii=radii)
-        kappa_from_deflections = convergence_via_deflection_angles_from_profile_and_radii(
-            profile=NFW_Keeton, radii=radii
-        )
-
-        mean_error = np.average(kappa_analytic - kappa_from_deflections)
-
-        ##lower assertion as deflection angles not as numerically stable
-        assert mean_error < 1e-1
-
     def test__convergence_Hilbert_from_deflections_and_analytic(self):
         NFW_Hilbert = profiles.NFW_Hilbert(
-            m200=2.5e12, concentration=3.2, z_s=0.8, z_l=0.3
+            m200=2.5e12, z_s=0.8, z_l=0.3
         )
         radii = np.arange(1, 5, 0.00002)
 
@@ -149,9 +120,9 @@ class TestNFW:
 
     def test__convergence_Bartelmann_from_deflections_and_analytic(self):
         NFW_Bartelmann = profiles.NFW_Bartelmann(
-            m200=2.5e12, concentration=3.2, z_s=0.8, z_l=0.3
+            m200=2.5e12, z_s=0.8, z_l=0.3
         )
-        radii = np.arange(1, 5, 0.00002)
+        radii = np.arange(1, 5, 0.0002)
 
         kappa_analytic = NFW_Bartelmann.convergence_from_radii(radii=radii)
         kappa_from_deflections = convergence_via_deflection_angles_from_profile_and_radii(
@@ -161,15 +132,3 @@ class TestNFW:
         mean_error = np.average(kappa_analytic - kappa_from_deflections)
 
         assert mean_error < 1e-3
-
-    def test__convergence_gives_correct_values_given_different_values_of_x(self):
-        NFW = profiles.NFW(scale_radius=2.15, kappa_s=0.2)
-        ## x < 1
-        kappa_x_small = NFW.convergence_from_radii(radii=[1.2, 1.6, 2.0])
-        assert kappa_x_small == pytest.approx(np.array([0.2504, 0.1867, 0.1453]), 1e-3)
-        ## x > 1
-        kappa_x_large = NFW.convergence_from_radii(radii=[2.2, 2.6, 3.0])
-        assert kappa_x_large == pytest.approx(np.array([0.1297, 0.1054, 0.0874]), 1e-3)
-        ## x=1
-        kappa_x_one = NFW.convergence_from_radii(radii=[NFW.scale_radius])
-        assert kappa_x_one == pytest.approx(np.array([0]), 1e-3)

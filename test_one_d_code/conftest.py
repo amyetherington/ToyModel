@@ -5,6 +5,7 @@ import pytest
 
 directory = path.dirname(path.realpath(__file__))
 
+
 @pytest.fixture(autouse=True)
 def set_config_path():
     conf.instance = conf.Config(
