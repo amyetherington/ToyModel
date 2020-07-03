@@ -25,10 +25,10 @@
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -62,10 +62,10 @@
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -96,39 +96,39 @@
             "mean": 0.0,
             "sigma": 0.3
         },
-        "axis_ratio": {
+        "elliptical_comps_0": {
             "type": "Uniform",
-            "lower_limit": 0.2,
+            "lower_limit": -1.0,
             "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 0.2
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": 0.0,
+                "lower": -1.0,
                 "upper": 1.0
             }
         },
-        "phi": {
+        "elliptical_comps_1": {
             "type": "Uniform",
-            "lower_limit": 0.0,
-            "upper_limit": 180.0,
+            "lower_limit": -1.0,
+            "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 20.0
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": "-inf",
-                "upper": "inf"
+                "lower": "-1.0",
+                "upper": "1.0"
             }
         },
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -162,10 +162,10 @@
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -209,39 +209,39 @@
             "mean": 0.0,
             "sigma": 0.3
         },
-        "axis_ratio": {
+        "elliptical_comps_0": {
             "type": "Uniform",
-            "lower_limit": 0.2,
+            "lower_limit": -1.0,
             "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 0.2
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": 0.0,
+                "lower": -1.0,
                 "upper": 1.0
             }
         },
-        "phi": {
+        "elliptical_comps_1": {
             "type": "Uniform",
-            "lower_limit": 0.0,
-            "upper_limit": 180.0,
+            "lower_limit": -1.0,
+            "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 20.0
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": "-inf",
-                "upper": "inf"
+                "lower": "-1.0",
+                "upper": "1.0"
             }
         },
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -288,10 +288,10 @@
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -335,39 +335,39 @@
             "mean": 0.0,
             "sigma": 0.3
         },
-        "axis_ratio": {
+        "elliptical_comps_0": {
             "type": "Uniform",
-            "lower_limit": 0.2,
+            "lower_limit": -1.0,
             "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 0.2
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": 0.0,
+                "lower": -1.0,
                 "upper": 1.0
             }
         },
-        "phi": {
+        "elliptical_comps_1": {
             "type": "Uniform",
-            "lower_limit": 0.0,
-            "upper_limit": 180.0,
+            "lower_limit": -1.0,
+            "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 20.0
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": "-inf",
-                "upper": "inf"
+                "lower": "-1.0",
+                "upper": "1.0"
             }
         },
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -414,10 +414,10 @@
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -474,39 +474,39 @@
             "mean": 0.0,
             "sigma": 0.3
         },
-        "axis_ratio": {
+        "elliptical_comps_0": {
             "type": "Uniform",
-            "lower_limit": 0.2,
+            "lower_limit": -1.0,
             "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 0.2
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": 0.0,
+                "lower": -1.0,
                 "upper": 1.0
             }
         },
-        "phi": {
+        "elliptical_comps_1": {
             "type": "Uniform",
-            "lower_limit": 0.0,
-            "upper_limit": 180.0,
+            "lower_limit": -1.0,
+            "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 20.0
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": "-inf",
-                "upper": "inf"
+                "lower": "-1.0",
+                "upper": "1.0"
             }
         },
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -566,10 +566,10 @@
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
@@ -639,39 +639,39 @@
             "mean": 0.0,
             "sigma": 0.3
         },
-        "axis_ratio": {
+        "elliptical_comps_0": {
             "type": "Uniform",
-            "lower_limit": 0.2,
+            "lower_limit": -1.0,
             "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 0.2
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": 0.0,
+                "lower": -1.0,
                 "upper": 1.0
             }
         },
-        "phi": {
+        "elliptical_comps_1": {
             "type": "Uniform",
-            "lower_limit": 0.0,
-            "upper_limit": 180.0,
+            "lower_limit": -1.0,
+            "upper_limit": 1.0,
             "width_modifier": {
                 "type": "Absolute",
-                "value": 20.0
+                "value": 0.3
             },
             "gaussian_limits": {
-                "lower": "-inf",
-                "upper": "inf"
+                "lower": "-1.0",
+                "upper": "1.0"
             }
         },
         "einstein_radius": {
             "type": "Uniform",
             "lower_limit": 0.0,
-            "upper_limit": 4.0,
+            "upper_limit": 8.0,
             "width_modifier": {
                 "type": "Relative",
-                "value": 0.05
+                "value": 0.15
             },
             "gaussian_limits": {
                 "lower": 0.0,
