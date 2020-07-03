@@ -163,8 +163,8 @@ class TestSlopeFromDynamics:
 
         radii = np.arange(0.2, 8, 0.002)
 
-        slope = combined.slope_via_dynamics(radii=radii)[1]
-        rho_0 = combined.slope_via_dynamics(radii=radii)[0]
+        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
+        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
 
         rein = combined.einstein_radius_in_kpc_from_radii(radii=radii)
         mein = combined.einstein_mass_in_solar_masses_from_radii(radii=radii)
@@ -183,8 +183,8 @@ class TestSlopeFromDynamics:
 
         radii = np.arange(0.2, 8, 0.002)
 
-        slope = combined.slope_via_dynamics(radii=radii)[1]
-        rho_0 = combined.slope_via_dynamics(radii=radii)[0]
+        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
+        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
 
         reff = combined.effective_radius
         mdyn = combined.three_dimensional_mass_enclosed_within_effective_radius

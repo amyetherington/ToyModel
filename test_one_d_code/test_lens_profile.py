@@ -110,8 +110,6 @@ class TestEinsteinRadius:
 
         einstein_radius = Hernquist.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        print(einstein_radius)
-
         av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
             np.pi * einstein_radius ** 2
         )

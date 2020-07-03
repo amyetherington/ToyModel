@@ -91,6 +91,16 @@ class TestHernquist:
 
         assert kappa == pytest.approx(kappa_via_sigma, 1e-4)
 
+    def test_mass_within_effective_radius_equal_to_half_total_mass(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
+        )
+
+        mass_2d = Hernquist.two_dimensional_mass_enclosed_within_radii(radii=Hernquist.effective_radius)
+
+        assert mass_2d == pytest.approx(Hernquist.mass*0.5, 1e-3)
+
+
 
 class TestNFW:
     def test__convergence_equal_to_surface_mass_density_divided_by_sigma_crit(self):

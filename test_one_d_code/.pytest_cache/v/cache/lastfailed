@@ -3,10 +3,15 @@
   "test_lens_profile.py::TestAutoLens::()::test_NFW_einstein_radius_equal_to_autolens_in_desired_units": true,
   "test_lens_profile.py::TestAutoLens::()::test_NFW_einstein_radius_equal_to_qutolens_in_desired_units": true,
   "test_lens_profile.py::TestAutoLens::()::test_r200_equal_to_autolens_function_in_desired_units": true,
-  "test_lens_profile.py::TestCompareAutoLens::()": true,
   "test_lens_profile.py::TestCompareAutoLens::()::test_NFW_einstein_mass_equal_to_autolens_in_desired_units": true,
-  "test_lens_profile.py::TestEinsteinRadius::()": true,
-  "test_lens_profile.py::TestShear::()": true,
+  "test_lens_profile.py::TestEinsteinRadius": true,
+  "test_lens_profile.py::TestEinsteinRadius::()::test__mean_power_law_convergence_within_calculated_einstein_radius_equal_to_one": true,
+  "test_lens_profile.py::TestEinsteinRadius::()::test__mean_power_law_convergence_within_einstein_radius_equal_to_one": true,
+  "test_lens_profile.py::TestShear": true,
+  "test_lens_profile.py::TestShear::()::test__shear_isothermal_sphere_equals_analytic": true,
+  "test_lens_profile.py::TestShear::()::test__shear_isothermal_sphere_equals_convergence": true,
+  "test_lens_profile.py::TestShear::()::test__shear_spherical_power_law_equals_analytic": true,
+  "test_one_d_profiles.py": true,
   "test_one_d_profiles.py::TestNFW::()::test__convergence_Keeton_from_deflections_and_analytic": true,
   "test_one_d_profiles.py::TestSphericalPowerLaw::()::test__convergence_equals_surface_mass_density_divided_by_sigma_crit": true
 }
