@@ -5,7 +5,6 @@ from one_d_code import lens_profile as lp
 from scipy import optimize
 from scipy.special import gamma
 
-
 cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
 
 def Mdyn(rho0,g,Reff,r0=1*u.kpc):
@@ -141,7 +140,7 @@ class CombinedProfile(lp.LensProfile):
 
         return np.divide(xi_two, 2) + 2
 
-    def slope_via_dynamics(self, radii):
+    def slope_and_normalisation_via_dynamics(self, radii):
 
         mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
 
@@ -151,7 +150,24 @@ class CombinedProfile(lp.LensProfile):
 
         mass_dyn = self.three_dimensional_mass_enclosed_within_radii(radii=r_dyn)
 
-        init_guess = np.array([7, 2])
+        init_guess = np.array([7, 1.9])
+
+        root_finding_data = optimize.root(vector_residuals, init_guess, args=(mass_dyn*u.Msun, mass_ein*u.Msun, r_dyn*u.kpc, r_ein*u.kpc),
+                                          method='hybr', options={'xtol': 0.0001})
+
+        return np.array([10**root_finding_data.x[0], root_finding_data.x[1]])
+
+    def slope_and_normalisation_via_2d_mass_and_einstain_mass(self, radii):
+
+        mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
+
+        r_ein = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        r_dyn = self.effective_radius
+
+        mass_dyn = self.two_dimensional_mass_enclosed_within_radii(radii=r_dyn)
+
+        init_guess = np.array([7, 1.9])
 
         root_finding_data = optimize.root(vector_residuals, init_guess, args=(mass_dyn*u.Msun, mass_ein*u.Msun, r_dyn*u.kpc, r_ein*u.kpc),
                                           method='hybr', options={'xtol': 0.0001})
@@ -207,6 +223,15 @@ class CombinedProfile(lp.LensProfile):
         error = np.sqrt(np.diag(cov))
 
         return np.array([coeffs, error])
+
+    def power_law_r_squared_value(self, mask, radii):
+        kappa = self.convergence_from_radii(radii=radii)
+        polydata = self.best_fit_power_law_convergence_from_mask_and_radii(mask=mask, radii=radii)
+
+        sstot = sum((np.log(kappa) - np.mean(np.log(kappa))) ** 2)
+        ssres = sum((np.log(kappa) - np.log(polydata)) ** 2)
+
+        return 1 - (ssres / sstot)
 
     def best_fit_power_law_slope_with_error_from_mask_and_radii(self, mask, radii):
         coeff, error = self.best_fit_power_law_convergence_coefficients_from_mask_and_radii(

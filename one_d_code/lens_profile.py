@@ -70,7 +70,7 @@ class LensProfile:
 
         sigma_crit = self.critical_surface_density_of_lens
 
-        return (4 * np.pi * einstein_radius ** 2 * sigma_crit)
+        return (np.pi * einstein_radius ** 2 * sigma_crit)
 
     def two_dimensional_mass_enclosed_within_radii(self, radii):
 

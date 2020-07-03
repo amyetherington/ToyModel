@@ -11,20 +11,24 @@ cosmo = cosmology.Planck15
 
 
 class SphericalPowerLaw(lp.LensProfile):
-    def __init__(self, einstein_radius, slope, z_s, z_l):
+    def __init__(self, einstein_radius, slope, z_s, z_l, effective_radius):
         super().__init__(z_l=z_l, z_s=z_s)
         self.einstein_radius = einstein_radius
+   #     self.einstein_radius_arc_sec = einstein_radius
         self.slope = slope
+        self.effective_radius = effective_radius
+       # self.rho_s = np.divide(self.m_ein, np.pi * einstein_radius ** 2)
 
     def density_from_radii(self, radii):
-        rho = np.divide(self.einstein_radius, radii ** self.slope)
+        rho = np.divide(self.critical_surface_density_of_lens, radii ** self.slope)
 
         return rho
 
-    # TODO: get surface mass density appropriately normalised
 
     def surface_mass_density_from_radii(self, radii):
-        rho = np.divide((3 - self.slope), 2) * np.divide(1, radii ** (self.slope - 1))
+        rho = self.critical_surface_density_of_lens * np.divide((3 - self.slope), 2) * np.divide(
+            self.einstein_radius, radii
+        ) ** (self.slope - 1)
 
         return rho
 
