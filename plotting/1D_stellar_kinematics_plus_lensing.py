@@ -28,8 +28,8 @@ print("Mein =", Mein(rho0,g,Rein))
 
 # to find rho0 and g from Mdyn and Mein (and Reff, Rein and an assumed r0), need to invert the equations for Mdyn and Mein, or just try rho0 and g until you find the right answer!
 
-Mdyn_true = Mdyn(rho0,g,Reff)
-Mein_true = Mein(rho0,g,Rein)
+Mdyn_true = 99379503476.72754*u.Msun
+Mein_true = 378916860347.4141*u.Msun
 
 
 # now from these, can we get the input rho0 and g?
@@ -37,6 +37,8 @@ st3 = timeit.default_timer()
 
 def vector_residuals(params, Mdyn_true,Mein_true,Reff,Rein):
     log_rho0, g = params
+    Reff= 5.68*u.kpc
+    Rein=3.274999999999997*u.kpc
 
     rho0 = 10**log_rho0*u.Msun/u.kpc**3
     
