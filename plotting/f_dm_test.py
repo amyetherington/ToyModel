@@ -56,15 +56,17 @@ lens_name = np.array([#'slacs0008-0004',
                       'slacs2238-0754',
                       'slacs2341+0000'])
 
-radii = np.arange(0.001, 50, 0.001)
+radii = np.arange(0.01, 500, 0.001)
 
-f = open('slacs_like_test_1d', 'a+')
+m200=np.arange()
+
+f = open('f_dm_test', 'a+')
 
 for i in range(len(lens_name)):
 
     baryons = profiles.Hernquist(mass=10**slacs["log[M*/M]_chab"][lens_name[i]], effective_radius=slacs["R_eff"][lens_name[i]],
                                  z_l=slacs["z_lens"][lens_name[i]], z_s=slacs["z_source"][lens_name[i]])
-    DM = profiles.NFW_Hilbert(m200=slacs["M200"][lens_name[i]], z_l=slacs["z_lens"][lens_name[i]],
+    DM = profiles.NFW_Hilbert(m200=m200[i], z_l=slacs["z_lens"][lens_name[i]],
                               z_s=slacs["z_source"][lens_name[i]])
     true_profile = cp.CombinedProfile(profiles=[baryons, DM])
 
