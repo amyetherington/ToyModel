@@ -70,7 +70,7 @@ class LensProfile:
 
         sigma_crit = self.critical_surface_density_of_lens
 
-        return (np.pi * einstein_radius ** 2 * sigma_crit)
+        return np.pi * einstein_radius ** 2 * sigma_crit
 
     def two_dimensional_mass_enclosed_within_radii(self, radii):
 
@@ -81,12 +81,6 @@ class LensProfile:
         mass = integrate.quad(integrand, 0, radii)[0]
 
         return mass
-
-    @property
-    def three_dimensional_mass_enclosed_within_effective_radius(self):
-        return self.three_dimensional_mass_enclosed_within_radii(
-            radii=self.effective_radius
-        )
 
     def three_dimensional_mass_enclosed_within_radii(self, radii):
 

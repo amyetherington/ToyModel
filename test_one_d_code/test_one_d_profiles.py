@@ -77,8 +77,41 @@ class TestSphericalPowerLaw:
 
         assert alpha == pytest.approx(np.array([0.927, 1.224, 1.439]), 1e-3)
 
+    def test__surface_mass_density_values_correct(self):
+        power_law = profiles.SphericalPowerLaw(
+            einstein_radius=1.4, slope=1.6, z_s=0.8, z_l=0.3
+        )
+
+        sigma = power_law.surface_mass_density_from_radii(radii=np.array([0.5, 1, 1.5]))
+
+        assert sigma == pytest.approx(np.array([3994429111, 2635340405, 2066245712]), 1e-3)
+
+    def test__density_values_correct(self):
+        power_law = profiles.SphericalPowerLaw(
+            einstein_radius=1.4, slope=1.6, z_s=0.8, z_l=0.3
+        )
+
+        sigma = power_law.density_from_radii(radii=np.array([0.5, 1, 1.5]))
+
+        assert sigma == pytest.approx(np.array([9326310116, 3076534994, 1608110342]), 1e-3)
+
 
 class TestHernquist:
+    def test__convergence_from_deflections_and_analytic(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
+        )
+        radii = np.arange(0.2, 3, 0.002)
+
+        kappa_analytic = Hernquist.convergence_from_radii(radii=radii)
+        kappa_from_deflections = convergence_via_deflection_angles_from_profile_and_radii(
+            profile=Hernquist, radii=radii
+        )
+
+        mean_error = np.average(kappa_analytic - kappa_from_deflections)
+
+        assert mean_error < 1e-4
+
     def test__convergence_equal_to_surface_mass_density_divided_by_sigma_crit(self):
         Hernquist = profiles.Hernquist(
             mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
@@ -91,7 +124,7 @@ class TestHernquist:
 
         assert kappa == pytest.approx(kappa_via_sigma, 1e-4)
 
-    def test_mass_within_effective_radius_equal_to_half_total_mass(self):
+    def test_mass_within_effective_radius_equal_to_half_total_two_d_mass(self):
         Hernquist = profiles.Hernquist(
             mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
         )
@@ -99,6 +132,57 @@ class TestHernquist:
         mass_2d = Hernquist.two_dimensional_mass_enclosed_within_radii(radii=Hernquist.effective_radius)
 
         assert mass_2d == pytest.approx(Hernquist.mass*0.5, 1e-3)
+
+    def test_mass_within_half_mass_radius_equal_to_half_total_three_d_mass(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
+        )
+
+        mass_3d = Hernquist.three_dimensional_mass_enclosed_within_radii(radii=Hernquist.half_mass_radius)
+
+        assert mass_3d == pytest.approx(Hernquist.mass*0.5, 1e-3)
+
+    def test__convergence_values_correct(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=1.8153, z_l=0.3, z_s=0.8
+        )
+
+        kappa = Hernquist.convergence_from_radii(radii=np.array([0.5, 1, 1.5]))
+
+        kappa_s = Hernquist.kappa_s
+
+        assert kappa == pytest.approx(np.array([1.318168568, 0, 0.2219485564]), 1e-3)
+        assert kappa_s == pytest.approx(1.758883964, 1e-3)
+
+    def test__deflection_angle_values_correct(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=1.8153, z_l=0.3, z_s=0.8
+        )
+
+        alpha = Hernquist.deflection_angles_from_radii(radii=np.array([0.5, 1, 1.5]))
+
+        assert alpha == pytest.approx(np.array([1.2211165, 0, 1.045731397]), 1e-3)
+
+    def test__surface_mass_density_values_correct(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=1.8153, z_l=0.3, z_s=0.8
+        )
+
+        sigma = Hernquist.surface_mass_density_from_radii(radii=np.array([0.5, 1, 1.5]))
+
+        assert sigma == pytest.approx(np.array([4053818282, 0, 682832509]), 1e-3)
+
+    def test_density_values_correct(self):
+        Hernquist = profiles.Hernquist(
+            mass=3.4e10, effective_radius=1.8153, z_l=0.3, z_s=0.8
+        )
+
+        rho = Hernquist.density_from_radii(radii=np.array([0.5, 1, 1.5]))
+
+        assert rho == pytest.approx(np.array([3206677372, 676408508, 230880770]), 1e-3)
+
+
+
 
 
 

@@ -2,6 +2,7 @@ import numpy as np
 from astropy import cosmology
 from astropy import units as u
 from one_d_code import lens_profile as lp
+from one_d_code import one_d_profiles as profile
 from scipy import optimize
 from scipy.special import gamma
 
@@ -80,6 +81,24 @@ class CombinedProfile(lp.LensProfile):
         return effective_radii[0]
 
     @property
+    def dark_matter(self):
+        dark_matter = [
+            profile if hasattr(profile, "m200") else None
+            for profile in self.profiles
+        ]
+
+        dark_matter = list(filter(None, dark_matter))
+
+        if len(dark_matter) == 0:
+            raise ValueError("There is no dark matter in this Combined Profile")
+        elif len(dark_matter) > 1:
+            raise ValueError(
+                "There are multiple dark matter profiles in this Combined Profile, it is ambiguous which to use."
+            )
+
+        return dark_matter[0]
+
+    @property
     def three_dimensional_mass_enclosed_within_effective_radius(self):
         return sum(
             [
@@ -100,6 +119,24 @@ class CombinedProfile(lp.LensProfile):
                 for profile in self.profiles
             ]
         )
+
+    @property
+    def dark_matter_mass_fraction_within_effective_radius(self):
+        dm = self.dark_matter
+
+        dm_mass = dm.three_dimensional_mass_enclosed_within_radii(radii=self.effective_radius)
+        total_mass = self.three_dimensional_mass_enclosed_within_effective_radius
+
+        return dm_mass/total_mass
+
+    def dark_matter_mass_fraction_within_einstein_radius_from_radii(self, radii):
+        dm = self.dark_matter
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        dm_mass = dm.three_dimensional_mass_enclosed_within_radii(radii=einstein_radius)
+        total_mass = self.three_dimensional_mass_enclosed_within_radii(radii=einstein_radius)
+
+        return dm_mass / total_mass
 
     def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(
         self, radii
@@ -157,7 +194,35 @@ class CombinedProfile(lp.LensProfile):
 
         return np.array([10**root_finding_data.x[0], root_finding_data.x[1]])
 
-    def slope_and_normalisation_via_2d_mass_and_einstain_mass(self, radii):
+    def einstein_radius_via_dynamics(self, radii):
+        rho_0, slope = self.slope_and_normalisation_via_dynamics(radii=radii)
+
+        A = np.divide(gamma(slope/(2*self.critical_surface_density_of_lens)), gamma((slope-1)/2)*np.sqrt(np.pi))
+
+        einstein_radius = ((2*rho_0)/(A*(3-slope)))**(1-slope)
+
+        return einstein_radius
+
+    def power_law_convergence_via_dynamics(self, radii):
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+        slope = self.slope_and_normalisation_via_dynamics(radii=radii)[1]
+
+        power_law = profile.SphericalPowerLaw(einstein_radius=einstein_radius, slope=slope,
+                                              z_l=self.z_l, z_s=self.z_s)
+
+        return power_law.convergence_from_radii(radii=radii)
+
+    def power_law_convergence_via_lensing(self, radii):
+        slope = self.slope_via_lensing(radii=radii)
+
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        power_law = profile.SphericalPowerLaw(einstein_radius=einstein_radius, slope=slope,
+                                              z_l=self.z_l, z_s=self.z_s)
+
+        return power_law.convergence_from_radii(radii=radii)
+
+    def slope_and_normalisation_via_2d_mass_and_einstein_mass(self, radii):
 
         mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
 
@@ -224,6 +289,18 @@ class CombinedProfile(lp.LensProfile):
 
         return np.array([coeffs, error])
 
+    def best_fit_power_law_convergence_coefficients_from_radii(
+        self, radii
+    ):
+
+        kappa = self.convergence_from_radii(radii=radii)
+
+        coeffs, cov = np.polyfit(np.log(radii), np.log(kappa), deg=1, cov=True)
+
+        error = np.sqrt(np.diag(cov))
+
+        return np.array([coeffs, error])
+
     def power_law_r_squared_value(self, mask, radii):
         kappa = self.convergence_from_radii(radii=radii)
         polydata = self.best_fit_power_law_convergence_from_mask_and_radii(mask=mask, radii=radii)
@@ -255,6 +332,28 @@ class CombinedProfile(lp.LensProfile):
 
         return best_fit(radii)
 
+    def best_fit_power_law_slope_with_error_from_radii(self,radii):
+        coeff, error = self.best_fit_power_law_convergence_coefficients_from_radii(
+            radii=radii
+        )[
+            :, 0
+        ]
+
+        slope = np.abs(coeff - 1)
+
+        return np.array([slope, error])
+
+    def best_fit_power_law_convergence_from_radii(self, radii):
+        coeffs = self.best_fit_power_law_convergence_coefficients_from_radii(
+            radii=radii
+        )[0]
+
+        poly = np.poly1d(coeffs)
+
+        best_fit = lambda radius: np.exp(poly(np.log(radius)))
+
+        return best_fit(radii)
+
     def best_fit_power_law_einstein_radius_with_error_from_mask_and_radii(
         self, mask, radii
     ):
@@ -267,6 +366,26 @@ class CombinedProfile(lp.LensProfile):
 
         slope = self.best_fit_power_law_slope_with_error_from_mask_and_radii(
             radii=radii, mask=mask
+        )[0]
+
+        einstein_radius = np.exp(
+            np.divide(normalization - np.log(np.divide(3 - slope, 2)), slope - 1)
+        )
+
+        return np.array([einstein_radius, error])
+
+    def best_fit_power_law_einstein_radius_with_error_from_radii(
+        self, radii
+    ):
+
+        normalization, error = self.best_fit_power_law_convergence_coefficients_from_radii(
+            radii=radii
+        )[
+            :, 1
+        ]
+
+        slope = self.best_fit_power_law_slope_with_error_from_radii(
+            radii=radii
         )[0]
 
         einstein_radius = np.exp(

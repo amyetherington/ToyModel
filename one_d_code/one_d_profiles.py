@@ -11,19 +11,17 @@ cosmo = cosmology.Planck15
 
 
 class SphericalPowerLaw(lp.LensProfile):
-    def __init__(self, einstein_radius, slope, z_s, z_l, effective_radius):
+    def __init__(self, einstein_radius, slope, z_s, z_l):
         super().__init__(z_l=z_l, z_s=z_s)
         self.einstein_radius = einstein_radius
-   #     self.einstein_radius_arc_sec = einstein_radius
         self.slope = slope
-        self.effective_radius = effective_radius
-       # self.rho_s = np.divide(self.m_ein, np.pi * einstein_radius ** 2)
+        self.m_ein = np.pi * einstein_radius**2 * self.critical_surface_density_of_lens
+        self.rho_s = np.divide(self.m_ein, np.pi * einstein_radius ** 2)
 
     def density_from_radii(self, radii):
-        rho = np.divide(self.critical_surface_density_of_lens, radii ** self.slope)
+        rho = self.critical_surface_density_of_lens*np.divide(1, radii)**self.slope
 
         return rho
-
 
     def surface_mass_density_from_radii(self, radii):
         rho = self.critical_surface_density_of_lens * np.divide((3 - self.slope), 2) * np.divide(
@@ -54,6 +52,7 @@ class Hernquist(lp.LensProfile):
 
         self.mass = mass
         self.effective_radius = effective_radius
+        self.half_mass_radius = self.effective_radius * 1.33
         self.r_s = self.effective_radius / 1.8153
         self.rho_s = np.divide(self.mass, 2 * np.pi * self.r_s ** 3)
         self.kappa_s = self.rho_s * self.r_s / self.critical_surface_density_of_lens
@@ -69,21 +68,21 @@ class Hernquist(lp.LensProfile):
         x = np.array(radii / self.r_s)
         f = self.f_func(x)
 
-        return np.divide(self.rho_s * self.r_s, (x ** 2 - 1) ** 2) * (
+        return np.where(f==1, 0, np.divide(self.rho_s * self.r_s, (x ** 2 - 1) ** 2) * (
             -3 + f * (2 + x ** 2)
-        )
+        ))
 
     def convergence_from_radii(self, radii):
         x = np.array(radii / self.r_s)
         f = self.f_func(x)
 
-        return np.divide(self.kappa_s, (x ** 2 - 1) ** 2) * (-3 + f * (2 + x ** 2))
+        return np.where(f==1, 0, np.divide(self.kappa_s, (x ** 2 - 1) ** 2) * (-3 + f * (2 + x ** 2)))
 
     def deflection_angles_from_radii(self, radii):
         x = np.array(radii / self.r_s)
         f = self.f_func(x)
 
-        return 2 * self.kappa_s * self.r_s * np.divide(x * (1 - f), x ** 2 - 1)
+        return np.where(f==1, 0, 2 * self.kappa_s * self.r_s * np.divide(x * (1 - f), x ** 2 - 1))
 
 
 class NFW_Bartelmann(lp.LensProfile):

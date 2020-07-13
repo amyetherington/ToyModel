@@ -4,6 +4,10 @@ import pytest
 
 from astropy import cosmology
 from autoconf import conf
+
+workspace_path = '{}'.format(os.path.dirname(os.path.realpath(__file__)))
+conf.instance = conf.Config(config_path=f"{workspace_path}/config")
+
 from autogalaxy.util import cosmology_util
 from autogalaxy.profiles import mass_profiles as mp
 from one_d_code import one_d_profiles as profiles
@@ -21,7 +25,7 @@ def do_something():
     conf.instance = conf.Config("{}/config/".format(directory))
 
 
-class TestShear:
+class TestShearAndEigenvalue:
     def test__shear_isothermal_sphere_equals_analytic(self):
         power_law = profiles.SphericalPowerLaw(
             einstein_radius=1.8, slope=2, z_s=0.8, z_l=0.3
@@ -65,6 +69,20 @@ class TestShear:
         mean_error = np.average(shear_isothermal - shear_isothermal_analytic)
 
         assert mean_error < 1e-4
+
+    def test__tangential_eigenvalue_equal_to_zero_at_einstein_radius(self):
+        power_law = profiles.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2, z_s=0.8, z_l=0.3
+        )
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        eigenvalue = power_law.tangential_eigenvalue_from_radii(radii=radii)
+
+        index = np.argmin(np.abs(np.array(radii) - (power_law.einstein_radius)))
+
+
+        assert eigenvalue[index] == pytest.approx(0, 1e-3)
 
 
 class TestEinsteinRadius:
@@ -165,6 +183,23 @@ class TestCompareAutoLens:
 
         assert sigma_crit == pytest.approx(autolens_sigma_crit, 1e-4)
 
+    def test_sigma_crit_power_law_equal_to_autolens_function_in_desired_units(self):
+        power_law = profiles.SphericalPowerLaw(
+            einstein_radius=1.4, slope=1.6, z_s=0.8, z_l=0.3
+        )
+        sigma_crit = power_law.critical_surface_density_of_lens
+
+        autolens_sigma_crit = cosmology_util.critical_surface_density_between_redshifts_from(
+            redshift_1=0.8,
+            redshift_0=0.3,
+            unit_length="kpc",
+            unit_mass="solMass",
+            cosmology=cosmo,
+        )
+        print(sigma_crit)
+
+        assert sigma_crit == pytest.approx(autolens_sigma_crit, 1e-4)
+
     def test_r200_equal_to_autolens_function_in_desired_units(self):
 
         autolens = mp.dark_mass_profiles.kappa_s_and_scale_radius_for_ludlow(
@@ -219,3 +254,15 @@ class TestCompareAutoLens:
         )
 
         assert einstein_mass == pytest.approx(einstein_mass_autolens, 1e-2)
+
+    def test_pl_convergence_equal_to_autolens_in_desired_units(self):
+
+        pl = profiles.SphericalPowerLaw(einstein_radius=1.2, slope=1.8, z_l=0.3, z_s=1.0, effective_radius=3.2)
+        radii = np.arange(0.01, 5, 0.001)
+
+        pl_autolens = mp.SphericalPowerLaw(einstein_radius=1.2, slope=1.8)
+
+        einstein_radius = pl.einstein_radius_in_kpc_from_radii(radii=radii)
+        einstein_radius_al = pl_autolens.einstein_radius_in_units(unit_length="kpc", redshift_object=0.3)
+
+        assert einstein_radius == pytest.approx(einstein_radius_al, 1e-2)
