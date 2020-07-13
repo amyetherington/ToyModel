@@ -182,10 +182,6 @@ class TestHernquist:
         assert rho == pytest.approx(np.array([3206677372, 676408508, 230880770]), 1e-3)
 
 
-
-
-
-
 class TestNFW:
     def test__convergence_equal_to_surface_mass_density_divided_by_sigma_crit(self):
         NFW = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=0.8)
@@ -197,7 +193,7 @@ class TestNFW:
 
         assert kappa == pytest.approx(kappa_via_sigma, 1e-4)
 
-    def test__convergence_Hilbert_from_deflections_and_analytic(self):
+    def test__convergence_from_deflections_and_analytic(self):
         NFW_Hilbert = profiles.NFW_Hilbert(
             m200=2.5e12, z_s=0.8, z_l=0.3
         )
@@ -212,17 +208,35 @@ class TestNFW:
 
         assert mean_error < 1e-3
 
-    def test__convergence_Bartelmann_from_deflections_and_analytic(self):
-        NFW_Bartelmann = profiles.NFW_Bartelmann(
-            m200=2.5e12, z_s=0.8, z_l=0.3
-        )
-        radii = np.arange(1, 5, 0.0002)
-
-        kappa_analytic = NFW_Bartelmann.convergence_from_radii(radii=radii)
-        kappa_from_deflections = convergence_via_deflection_angles_from_profile_and_radii(
-            profile=NFW_Bartelmann, radii=radii
+    def test__convergence_values_correct(self):
+        NFW_Hilbert = profiles.NFW_Hilbert(
+            m200=2.5e14, z_s=1.0, z_l=0.5
         )
 
-        mean_error = np.average(kappa_analytic - kappa_from_deflections)
+        kappa = NFW_Hilbert.convergence_from_radii(radii=np.array([132.3960792, 264.79215844891064, 397.1882377]))
 
-        assert mean_error < 1e-3
+        kappa_s = NFW_Hilbert.kappa_s
+
+        assert kappa == pytest.approx(np.array([0.1567668617, 0, 0.04475020184]), 1e-3)
+        assert kappa_s == pytest.approx(0.1129027792225471, 1e-3)
+
+    def test__surface_mass_density_values_correct(self):
+        NFW_Hilbert = profiles.NFW_Hilbert(
+            m200=2.5e14, z_s=1.0, z_l=0.5
+        )
+        print(NFW_Hilbert.f_func(0.5))
+
+        sigma = NFW_Hilbert.surface_mass_density_from_radii(radii=np.array([132.3960792, 264.79215844891064, 397.1882377]))
+
+        assert sigma == pytest.approx(np.array([470603968.6, 0, 134337210.4]), 1e-3)
+
+    def test__density_values_correct(self):
+        NFW_Hilbert = profiles.NFW_Hilbert(
+            m200=2.5e14, z_s=1.0, z_l=0.5
+        )
+        rho_s = NFW_Hilbert.rho_s
+
+        rho = NFW_Hilbert.density_from_radii(radii=np.array([132.3960792, 264.79215844891064, 397.1882377]))
+
+        assert rho == pytest.approx(np.array([1137753.844, 319993.2686, 136530.4613]), 1e-3)
+        assert rho_s == pytest.approx(1279973.074564, 1e-3)

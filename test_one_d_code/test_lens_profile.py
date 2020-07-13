@@ -196,16 +196,16 @@ class TestCompareAutoLens:
             unit_mass="solMass",
             cosmology=cosmo,
         )
-        print(sigma_crit)
 
         assert sigma_crit == pytest.approx(autolens_sigma_crit, 1e-4)
 
     def test_r200_equal_to_autolens_function_in_desired_units(self):
 
         autolens = mp.dark_mass_profiles.kappa_s_and_scale_radius_for_ludlow(
-            mass_at_200=2.5e14, redshift_source=1.0, redshift_object=0.3
+            mass_at_200=2.5e14, redshift_source=1.0, redshift_object=0.5
         )
-        NFW = profiles.NFW_Hilbert(m200=2.5e14, z_l=0.3, z_s=1.0)
+        NFW = profiles.NFW_Hilbert(m200=2.5e14, z_l=0.5, z_s=1.0)
+        print(NFW.rho_s)
 
         r200 = NFW.r200.value
 
@@ -213,7 +213,7 @@ class TestCompareAutoLens:
 
         scale_radius = NFW.r_s
 
-        scale_radius_kpc = autolens[1]/cosmology_util.arcsec_per_kpc_from(redshift=0.3, cosmology=cosmo)
+        scale_radius_kpc = autolens[1]/cosmology_util.arcsec_per_kpc_from(redshift=0.5, cosmology=cosmo)
 
         assert r200 == pytest.approx(autolens[2], 1e-3)
 
