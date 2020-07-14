@@ -97,15 +97,51 @@ class LensProfile:
 
         return np.gradient(d_alpha, radii[:])
 
+    def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(
+        self, radii
+    ):
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        index = np.argmin(
+            np.abs(np.array(radii) - einstein_radius)
+        )
+
+        dd_alpha = self.second_derivative_of_deflection_angles_from_radii(
+            radii=radii
+        )
+
+        return dd_alpha[index]
+
+    def convergence_at_einstein_radius_from_radii(self, radii):
+
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        kappa = self.convergence_from_radii(radii=einstein_radius)
+
+        return kappa
+
+    def xi_two(self, radii):
+
+        kappa_ein = self.convergence_at_einstein_radius_from_radii(radii=radii)
+
+        dd_alpha_ein = self.second_derivative_of_deflection_angles_at_einstein_radius_from_radii(radii=radii)
+
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        return np.divide(einstein_radius * dd_alpha_ein, 1 - kappa_ein)
+
+    def slope_via_lensing(self, radii):
+
+        xi_two = self.xi_two(radii=radii)
+
+        return np.divide(xi_two, 2) + 2
+
     def f_func(self, x):
         f = np.where(
-            x < 1,
-            (np.divide(1, np.sqrt(1 - x ** 2)) * np.arctanh(np.sqrt(1 - x ** 2))),
+            x > 1,
+            1 - 2 * np.arctan(np.sqrt((x - 1) / (x + 1))) / np.sqrt(x ** 2 - 1),
             x,
         )
-        f = np.where(
-            x > 1,
-            (np.divide(1, np.sqrt(x ** 2 - 1)) * np.arctan(np.sqrt(x ** 2 - 1))),
-            f,
-        )
-        return f
+        f = np.where(x < 1, 1 - (1 / np.sqrt(1 - x ** 2)) * np.arccosh(1 / x), f)
+        return np.where(x==1, 0, f)
+

@@ -21,8 +21,6 @@ class TestSphericalPowerLaw:
             einstein_radius=1.8, slope=1.7, z_s=0.8, z_l=0.3
         )
         radii = np.arange(0.2, 3, 0.002)
-        ## include some interpolation in convergence from deflection angles
-        # so don't need to have such a finely sampled radii grid, this test will fail if > 0.002
 
         kappa_analytic = power_law.convergence_from_radii(radii=radii)
         kappa_from_deflections = convergence_via_deflection_angles_from_profile_and_radii(
@@ -124,24 +122,6 @@ class TestHernquist:
 
         assert kappa == pytest.approx(kappa_via_sigma, 1e-4)
 
-    def test_mass_within_effective_radius_equal_to_half_total_two_d_mass(self):
-        Hernquist = profiles.Hernquist(
-            mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
-        )
-
-        mass_2d = Hernquist.two_dimensional_mass_enclosed_within_radii(radii=Hernquist.effective_radius)
-
-        assert mass_2d == pytest.approx(Hernquist.mass*0.5, 1e-3)
-
-    def test_mass_within_half_mass_radius_equal_to_half_total_three_d_mass(self):
-        Hernquist = profiles.Hernquist(
-            mass=3.4e10, effective_radius=8.4, z_l=0.3, z_s=0.8
-        )
-
-        mass_3d = Hernquist.three_dimensional_mass_enclosed_within_radii(radii=Hernquist.half_mass_radius)
-
-        assert mass_3d == pytest.approx(Hernquist.mass*0.5, 1e-3)
-
     def test__convergence_values_correct(self):
         Hernquist = profiles.Hernquist(
             mass=3.4e10, effective_radius=1.8153, z_l=0.3, z_s=0.8
@@ -224,7 +204,6 @@ class TestNFW:
         NFW_Hilbert = profiles.NFW_Hilbert(
             m200=2.5e14, z_s=1.0, z_l=0.5
         )
-        print(NFW_Hilbert.f_func(0.5))
 
         sigma = NFW_Hilbert.surface_mass_density_from_radii(radii=np.array([132.3960792, 264.79215844891064, 397.1882377]))
 

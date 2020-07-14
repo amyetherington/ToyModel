@@ -138,45 +138,6 @@ class CombinedProfile(lp.LensProfile):
 
         return dm_mass / total_mass
 
-    def second_derivative_of_deflection_angles_at_einstein_radius_from_radii(
-        self, radii
-    ):
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
-        index = np.argmin(
-            np.abs(np.array(radii) - (einstein_radius))
-        )
-
-        dd_alpha = self.second_derivative_of_deflection_angles_from_radii(
-            radii=radii
-        )
-
-        return dd_alpha[index]
-
-    def convergence_at_einstein_radius_from_radii(self, radii):
-
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
-        kappa = self.convergence_from_radii(radii=einstein_radius)
-
-        return kappa
-
-    def xi_two(self, radii):
-
-        kappa_ein = self.convergence_at_einstein_radius_from_radii(radii=radii)
-
-        dd_alpha_ein = self.second_derivative_of_deflection_angles_at_einstein_radius_from_radii(radii=radii)
-
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
-        return np.divide(einstein_radius * dd_alpha_ein, 1 - kappa_ein)
-
-    def slope_via_lensing(self, radii):
-
-        xi_two = self.xi_two(radii=radii)
-
-        return np.divide(xi_two, 2) + 2
-
     def slope_and_normalisation_via_dynamics(self, radii):
 
         mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
@@ -222,32 +183,13 @@ class CombinedProfile(lp.LensProfile):
 
         return power_law.convergence_from_radii(radii=radii)
 
-    def slope_and_normalisation_via_2d_mass_and_einstein_mass(self, radii):
-
-        mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
-
-        r_ein = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
-        r_dyn = self.effective_radius
-
-        mass_dyn = self.two_dimensional_mass_enclosed_within_radii(radii=r_dyn)
-
-        init_guess = np.array([7, 1.9])
-
-        root_finding_data = optimize.root(vector_residuals, init_guess, args=(mass_dyn*u.Msun, mass_ein*u.Msun, r_dyn*u.kpc, r_ein*u.kpc),
-                                          method='hybr', options={'xtol': 0.0001})
-
-        return np.array([10**root_finding_data.x[0], root_finding_data.x[1]])
-
+    # should masks be a separate object and not part of a combined profile???
     def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
-
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
         index1 = np.argmin(
-            np.abs(np.array(radii) - (radii[0] + lower_bound * einstein_radius))
+            np.abs(np.array(radii) - (radii[0] + lower_bound))
         )
         index2 = np.argmin(
-            np.abs(np.array(radii) - (radii[0] + upper_bound * einstein_radius))
+            np.abs(np.array(radii) - (radii[0] + upper_bound))
         )
         weights = np.zeros(len(radii))
         weights[index1:index2] = 1
@@ -257,19 +199,17 @@ class CombinedProfile(lp.LensProfile):
     def mask_two_radial_ranges_from_radii(
         self, lower_bound_1, upper_bound_1, lower_bound_2, upper_bound_2, radii
     ):
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
         index1 = np.argmin(
-            np.abs(np.array(radii) - (radii[0] + lower_bound_1 * einstein_radius))
+            np.abs(np.array(radii) - (radii[0] + lower_bound_1))
         )
         index2 = np.argmin(
-            np.abs(np.array(radii) - (radii[0] + upper_bound_1 * einstein_radius))
+            np.abs(np.array(radii) - (radii[0] + upper_bound_1))
         )
         index3 = np.argmin(
-            np.abs(np.array(radii) - (radii[0] + lower_bound_2 * einstein_radius))
+            np.abs(np.array(radii) - (radii[0] + lower_bound_2))
         )
         index4 = np.argmin(
-            np.abs(np.array(radii) - (radii[0] + upper_bound_2 * einstein_radius))
+            np.abs(np.array(radii) - (radii[0] + upper_bound_2))
         )
         weights = np.zeros(len(radii))
         weights[index1:index2] = 1
@@ -277,6 +217,7 @@ class CombinedProfile(lp.LensProfile):
 
         return weights
 
+    ## also can I make it so mask is either used or not so I don't need from mask and radii and from radii functions?
     def best_fit_power_law_convergence_coefficients_from_mask_and_radii(
         self, mask, radii
     ):
@@ -394,7 +335,7 @@ class CombinedProfile(lp.LensProfile):
 
         return np.array([einstein_radius, error])
 
-    def best_fit_einstein_mass_in_solar_masses_from_mask_and_radii_and_redshifts(
+    def best_fit_einstein_mass_in_solar_masses_from_mask_and_radii(
         self, radii, mask, z_l
     ):
         einstein_radius_rad = (
@@ -403,13 +344,15 @@ class CombinedProfile(lp.LensProfile):
             )
             * u.arcsec
         ).to(u.rad)
-        D_l = cosmo.angular_diameter_distance(z_l).to(u.m)
+        D_l = cosmo.angular_diameter_distance(self.z_l).to(u.m)
 
         einstein_radius = (einstein_radius_rad * D_l).value
 
         sigma_crit = self.critical_surface_density_of_lens
 
         return (4 * np.pi * einstein_radius ** 2 * sigma_crit) / 1.989e30
+
+    ###  FROM HERE ON IS OLD CODE CALCULATING SLOPES AS A BEST FIT TO THE DEFLECTION ANGLES
 
     def best_fit_power_law_deflection_angles_coefficients_from_mask_and_radii(
         self, mask, radii
@@ -456,8 +399,6 @@ class CombinedProfile(lp.LensProfile):
         )
 
         coeffs = np.polyfit(np.log(radii), np.log(best_fit_kappa), deg=1)
-
-        ## need to figure out how to get error on convergence slope given error on slope of best fit deflection angles
 
         return coeffs
 

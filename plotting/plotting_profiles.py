@@ -47,12 +47,19 @@ kappa_via_sigma_NFW = rho_NFW / DM_Hilb.critical_surface_density_of_lens
 rho_H = Hernquist.surface_mass_density_from_radii(radii=radii)
 kappa_H = Hernquist.convergence_from_radii(radii=radii)
 kappa_via_sigma_H = rho_H / Hernquist.critical_surface_density_of_lens
+total_rho = total.surface_mass_density_from_radii(radii=radii)
 
 
 fig1 = plt.figure(1)
 plt.loglog(radii, kappa_H, label="Hernquist")
 plt.loglog(radii, kappa_NFW, label="NFW")
 plt.loglog(radii, kappa_total, label="total")
+plt.legend()
+
+fig2 = plt.figure(2)
+plt.loglog(radii, rho_H, label="Hernquist")
+plt.loglog(radii, rho_NFW, label="NFW")
+plt.loglog(radii, total_rho, label="total")
 plt.legend()
 
 plt.show()

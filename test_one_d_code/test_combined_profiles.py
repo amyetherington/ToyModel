@@ -22,8 +22,8 @@ def Mdyn(rho0,g,Reff,r0=1*u.kpc):
     rho0 = rho0 * u.Msun / u.kpc ** 3
     return ((4*np.pi*rho0 / (3-g)) * Reff**3 * (Reff/r0)**-g).to('Msun').value
 
-class TestCombinedProfile:
 
+class TestCombinedProfile:
     def test__effective_radius_from_combined_profile(self):
 
         hernquist = profiles.Hernquist(
@@ -42,8 +42,6 @@ class TestCombinedProfile:
         combined = cp.CombinedProfile(profiles=[dm, baryons])
 
         radii = np.arange(0.2, 8, 0.002)
-        ## include some interpolation in convergence from deflection angles???
-        # so don't need to have such a finely sampled radii grid, this test will fail if > 0.002
 
         kappa_analytic = combined.convergence_from_radii(radii=radii)
         kappa_from_deflections = convergence_via_deflection_angles_from_profile_and_radii(
@@ -89,6 +87,111 @@ class TestCombinedProfile:
 
         assert alpha_combined == pytest.approx(alpha_NFW + alpha_pl, 1e-4)
 
+    def test__surface_mass_density_equals_sum_of_individual_profiles(self):
+        dm = profiles.NFW_Hilbert(m200=2.5e14, z_l=0.3, z_s=1.0)
+        baryons = profiles.Hernquist(
+            mass=3.4e11, effective_radius=8.4, z_l=0.6, z_s=1.2
+        )
+
+        combined = cp.CombinedProfile(profiles=[dm, baryons])
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        sigma_combined = combined.surface_mass_density_from_radii(radii=radii)
+        sigma_NFW = dm.surface_mass_density_from_radii(radii=radii)
+        sigma_pl = baryons.surface_mass_density_from_radii(radii=radii)
+        sigma_sum = sigma_NFW + sigma_pl
+
+        assert sigma_combined == pytest.approx(sigma_sum, 1e-4)
+
+    def test__density_equals_sum_of_individual_profiles(self):
+        dm = profiles.NFW_Hilbert(m200=2.5e14, z_l=0.3, z_s=1.0)
+        baryons = profiles.Hernquist(
+            mass=3.4e11, effective_radius=8.4, z_l=0.6, z_s=1.2
+        )
+
+        combined = cp.CombinedProfile(profiles=[dm, baryons])
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        rho_combined = combined.density_from_radii(radii=radii)
+        rho_NFW = dm.density_from_radii(radii=radii)
+        rho_pl = baryons.density_from_radii(radii=radii)
+        rho_sum = rho_NFW + rho_pl
+
+        assert rho_combined == pytest.approx(rho_sum, 1e-4)
+
+
+class TestSlopeFromDynamics:
+    def test__einstein_mass_from_dynamics_slope_and_normalization_equals_analytic(self):
+        dm = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=1.0)
+        baryons = profiles.Hernquist(
+            mass=3.4e11, effective_radius=3.2, z_l=0.3, z_s=1.0
+        )
+        combined = cp.CombinedProfile(profiles=[dm, baryons])
+
+        radii = np.arange(0.2, 8, 0.002)
+
+        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
+        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
+
+        rein = combined.einstein_radius_in_kpc_from_radii(radii=radii)
+        mein = combined.einstein_mass_in_solar_masses_from_radii(radii=radii)
+
+        mein_from_dyn = Mein(rho0=rho_0, g=slope, Rein=rein*u.kpc)
+
+
+        assert mein == pytest.approx(mein_from_dyn, 1e-3)
+
+    def test__three_d_mass_from_dynamics_slope_and_normalization_equals_analytic(self):
+        dm = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=1.0)
+        baryons = profiles.Hernquist(
+            mass=3.4e11, effective_radius=3.2, z_l=0.3, z_s=1.0
+        )
+        combined = cp.CombinedProfile(profiles=[dm, baryons])
+
+        radii = np.arange(0.2, 8, 0.002)
+
+        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
+        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
+
+        reff = combined.effective_radius
+        mdyn = combined.three_dimensional_mass_enclosed_within_effective_radius
+
+        mdyn_from_dyn = Mdyn(rho0=rho_0, g=slope, Reff=reff*u.kpc)
+
+
+        assert mdyn == pytest.approx(mdyn_from_dyn, 1e-3)
+
+class TestSlopeFromLensing:
+    def test__convergence_at_einstein_radius_less_than_one(self):
+        dm = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=1.0)
+        baryons = profiles.Hernquist(
+            mass=3.4e11, effective_radius=3.2, z_l=0.3, z_s=1.0
+        )
+        combined = cp.CombinedProfile(profiles=[dm, baryons])
+
+        radii = np.arange(0.2, 8, 0.002)
+
+        kappa_ein = combined.convergence_at_einstein_radius_from_radii(radii=radii)
+
+        assert kappa_ein < 1
+
+
+
+class TestDarkMatterFraction:
+    def test__f_dm_equal_to_one_for_nfw_only_profile(self):
+        dm = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=1.0)
+        combined = cp.CombinedProfile(profiles=[dm])
+
+        radii = np.arange(0.2, 8, 0.002)
+
+        f_dm_ein = combined.dark_matter_mass_fraction_within_einstein_radius_from_radii(radii=radii)
+
+        assert f_dm_ein == pytest.approx(1, 1e-4)
+
+
+class TestBestFit:
     def test__best_fit_einstein_radius_from_intercept_equal_to_from_kappa(self):
         dm = profiles.NFW_Hilbert(m200=2.5e14, z_l=0.3, z_s=1.0)
         baryons = profiles.Hernquist(
@@ -152,45 +255,3 @@ class TestCombinedProfile:
         )
 
         assert einstein_radius_c == pytest.approx(einstein_radius_k, 1e-3)
-
-class TestSlopeFromDynamics:
-    def test__einstein_mass_from_dynamics_slope_and_normalization_equals_analytic(self):
-        dm = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=1.0)
-        baryons = profiles.Hernquist(
-            mass=3.4e11, effective_radius=3.2, z_l=0.3, z_s=1.0
-        )
-        combined = cp.CombinedProfile(profiles=[dm, baryons])
-
-        radii = np.arange(0.2, 8, 0.002)
-
-        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
-        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
-
-        rein = combined.einstein_radius_in_kpc_from_radii(radii=radii)
-        mein = combined.einstein_mass_in_solar_masses_from_radii(radii=radii)
-
-        mein_from_dyn = Mein(rho0=rho_0, g=slope, Rein=rein*u.kpc)
-
-
-        assert mein == pytest.approx(mein_from_dyn, 1e-3)
-
-    def test__three_d_mass_from_dynamics_slope_and_normalization_equals_analytic(self):
-        dm = profiles.NFW_Hilbert(m200=2.5e12, z_l=0.3, z_s=1.0)
-        baryons = profiles.Hernquist(
-            mass=3.4e11, effective_radius=3.2, z_l=0.3, z_s=1.0
-        )
-        combined = cp.CombinedProfile(profiles=[dm, baryons])
-
-        radii = np.arange(0.2, 8, 0.002)
-
-        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
-        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
-
-        reff = combined.effective_radius
-        mdyn = combined.three_dimensional_mass_enclosed_within_effective_radius
-
-        mdyn_from_dyn = Mdyn(rho0=rho_0, g=slope, Reff=reff*u.kpc)
-
-
-        assert mdyn == pytest.approx(mdyn_from_dyn, 1e-3)
-
