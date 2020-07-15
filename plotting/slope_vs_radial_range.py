@@ -34,12 +34,12 @@ fig_path = (
 for i in range(len(upper_bound)):
 
     kappa_best_fit_slope.append(
-        true_profile.best_fit_power_law_slope_with_error_between_radii_from_radii(
+        true_profile.inferred_slope_with_error_between_radii_from_radii(
             radii=radii, lower_bound=lower_bound[i], upper_bound=upper_bound[i]
         )[0]
     )
     kappa_best_fit_slope_from_alpha.append(
-        true_profile.best_fit_power_law_slope_via_deflection_angles_between_radii_from_radii(
+        true_profile.inferred_slope_via_deflections_between_radii_from_radii(
             radii=radii, lower_bound=lower_bound[i], upper_bound=upper_bound[i]
         )
     )
@@ -49,19 +49,19 @@ for i in range(len(upper_bound)):
             radii=radii,
             lower_bound=lower_bound[i],
             upper_bound=upper_bound[i],
-            z_l=0.3,
-            z_s=1.0,
+            redshift_lens=0.3,
+            redshift_source=1.0,
         )[
             0
         ]
     )
     kappa_best_fit_einstein_mass_from_alpha.append(
-        true_profile.best_fit_einstein_mass_in_solar_masses_via_deflection_angles_between_radii_from_radii_and_redshifts(
+        true_profile.best_fit_einstein_mass_in_solar_masses_via_deflections_between_radii_from_radii_and_redshifts(
             radii=radii,
             lower_bound=lower_bound[i],
             upper_bound=upper_bound[i],
-            z_l=0.3,
-            z_s=1.0,
+            redshift_lens=0.3,
+            redshift_source=1.0,
         )
     )
 

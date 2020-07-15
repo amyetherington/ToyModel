@@ -1,0 +1,3 @@
+
+class ProfileException(Exception):
+    pass

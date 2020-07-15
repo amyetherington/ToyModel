@@ -61,9 +61,11 @@ lens_name = np.array(
     ]
 )
 
-radii = np.arange(0.001, 50, 0.001)
+radii = np.arange(0.01, 500, 0.001)
 
-f = open("slacs_like_test_1d", "a+")
+mass_at_200 = np.arange()
+
+f = open("f_dm_test", "a+")
 
 for i in range(len(lens_name)):
 
@@ -74,7 +76,7 @@ for i in range(len(lens_name)):
         redshift_source=slacs["redshift_sourceource"][lens_name[i]],
     )
     DM = profiles.NFWHilbert(
-        mass_at_200=slacs["M200"][lens_name[i]],
+        mass_at_200=mass_at_200[i],
         redshift_lens=slacs["redshift_lensens"][lens_name[i]],
         redshift_source=slacs["redshift_sourceource"][lens_name[i]],
     )
