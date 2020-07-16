@@ -32,6 +32,20 @@ slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".for
 slacs = pd.read_excel(slacs_path, index_col=0)
 del slacs.index.name
 
+fig2 = plt.figure(2)
+plt.scatter(data["r_ein"], data["f_dm_eff"], label="slope from dynamics", color="cyan")
+plt.xlabel("r ein", fontsize=14)
+plt.ylabel("f_dm_eff", fontsize=14)
+plt.legend()
+
+
+fig2 = plt.figure(2)
+plt.scatter(data["r_ein"], data["f_dm_ein"], label="slope from dynamics", color="cyan")
+plt.xlabel("r ein", fontsize=14)
+plt.ylabel("f_dm", fontsize=14)
+plt.legend()
+
+
 
 fig1 = plt.figure(1)
 plt.scatter(
@@ -52,6 +66,7 @@ plt.scatter(
 plt.xlabel("r squared", fontsize=14)
 plt.ylabel("Slope", fontsize=14)
 plt.legend()
+
 
 fig2 = plt.figure(2)
 plt.scatter(data["r_ein"], data["dyn_slope"], label="slope from dynamics", color="cyan")

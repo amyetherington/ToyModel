@@ -144,7 +144,7 @@ class CombinedProfile(abstract.AbstractProfile):
     def dark_matter_mass_fraction_within_effective_radius(self):
         dm = self.dark
 
-        dm_mass = dm.three_dimensional_mass_enclosed_within_radii(
+        dm_mass = dm.two_dimensional_mass_enclosed_within_radii(
             radii=self.effective_radius
         )
         total_mass = self.three_dimensional_mass_enclosed_within_effective_radius
@@ -155,7 +155,7 @@ class CombinedProfile(abstract.AbstractProfile):
         dm = self.dark
         einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        dm_mass = dm.three_dimensional_mass_enclosed_within_radii(radii=einstein_radius)
+        dm_mass = dm.two_dimensional_mass_enclosed_within_radii(radii=einstein_radius)
         total_mass = self.three_dimensional_mass_enclosed_within_radii(
             radii=einstein_radius
         )

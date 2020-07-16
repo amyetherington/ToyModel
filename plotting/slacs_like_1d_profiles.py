@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import pandas as pd
-from lens1d import combined_profiles as cp
-from lens1d import one_d_profiles as profiles
+from lens1d.profiles import combined as cp
+from lens1d.profiles import oned as profiles
 
 slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".format(
     os.path.dirname(os.path.realpath(__file__))
@@ -61,7 +61,7 @@ lens_name = np.array(
     ]
 )
 
-radii = np.arange(0.001, 50, 0.001)
+radii = np.arange(0.01, 50, 0.001)
 
 f = open("slacs_like_test_1d", "a+")
 
@@ -70,13 +70,13 @@ for i in range(len(lens_name)):
     baryons = profiles.Hernquist(
         mass=10 ** slacs["log[M*/M]_chab"][lens_name[i]],
         effective_radius=slacs["R_eff"][lens_name[i]],
-        redshift_lens=slacs["redshift_lensens"][lens_name[i]],
-        redshift_source=slacs["redshift_sourceource"][lens_name[i]],
+        redshift_lens=slacs["z_lens"][lens_name[i]],
+        redshift_source=slacs["z_source"][lens_name[i]],
     )
     DM = profiles.NFWHilbert(
         mass_at_200=slacs["M200"][lens_name[i]],
-        redshift_lens=slacs["redshift_lensens"][lens_name[i]],
-        redshift_source=slacs["redshift_sourceource"][lens_name[i]],
+        redshift_lens=slacs["z_lens"][lens_name[i]],
+        redshift_source=slacs["z_source"][lens_name[i]],
     )
     true_profile = cp.CombinedProfile(profiles=[baryons, DM])
 

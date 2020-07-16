@@ -87,21 +87,21 @@ class Hernquist(abstract.AbstractProfile, StellarProfile):
         x = np.array(radii / self.scale_radius) + 0j
         f = self.f_func(x)
 
-        return np.where(
+        return np.real(np.where(
             f == 0,
             0,
-            np.divide(self.kappa_s, (x ** 2 - 1) ** 2) * (-3 + (1 - f) * (2 + x ** 2)),
-        )
+            np.real(np.divide(self.kappa_s, (x ** 2 - 1) ** 2) * (-3 + (1 - f) * (2 + x ** 2)),
+        )))
 
     def deflections_from_radii(self, radii):
         x = np.array(radii / self.scale_radius) + 0j
         f = self.f_func(x)
 
-        return np.where(
+        return np.real(np.where(
             f == 0,
             0,
             2 * self.kappa_s * self.scale_radius * np.divide(x * f, x ** 2 - 1),
-        )
+        ))
 
 
 class NFWHilbert(abstract.AbstractProfile, DarkProfile):
@@ -147,19 +147,19 @@ class NFWHilbert(abstract.AbstractProfile, DarkProfile):
         f = self.f_func(x)
         sigma = 2 * self.rho_s * self.scale_radius * (np.array(f) / (x ** 2 - 1))
 
-        return np.where(f == 0, 0, sigma)
+        return np.where(f == 0, 0, np.real(sigma))
 
     def convergence_from_radii(self, radii):
         x = np.array(radii / self.scale_radius) + 0j
         f = self.f_func(x)
         kappa = 2 * self.kappa_s * np.array(f) / (x ** 2 - 1)
 
-        return np.where(f == 0, 0, kappa)
+        return np.where(f == 0, 0, np.real(kappa))
 
     def deflections_from_radii(self, radii):
         x = np.divide(radii, self.scale_radius) + 0j
         f = self.f_func(x)
-        return (
+        return np.real(
             4
             * self.kappa_s
             * self.scale_radius
