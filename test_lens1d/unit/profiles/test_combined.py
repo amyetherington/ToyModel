@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from astropy import units as u
 from scipy.special import gamma
+from scipy import integrate
 
 import lens1d as l1d
 
@@ -36,37 +37,7 @@ def mass_dynamical(rho0, g, Reff, r0=1 * u.kpc):
     )
 
 
-class TestCombinedProfile:
-    def test__effective_radius_from_combined_profile(self):
-
-        hernquist = l1d.Hernquist(
-            effective_radius=1.0, mass=100.0, redshift_source=0.5, redshift_lens=1.0
-        )
-
-        combined = l1d.CombinedProfile(profiles=[hernquist])
-
-        assert combined.effective_radius == 1.0
-
-    def test__convergence_from_deflections_and_analytic(self):
-        dm = l1d.NFWHilbert(
-            mass_at_200=2.5e14, redshift_lens=0.3, redshift_source=1.0
-        )
-        baryons = l1d.Hernquist(
-            mass=3.4e11, effective_radius=8.4, redshift_lens=0.6, redshift_source=1.2
-        )
-        combined = l1d.CombinedProfile(profiles=[dm, baryons])
-
-        radii = np.arange(0.2, 8, 0.002)
-
-        kappa_analytic = combined.convergence_from_radii(radii=radii)
-        kappa_from_deflections = convergence_via_deflections_from_profile_and_radii(
-            profile=combined, radii=radii
-        )
-
-        mean_error = np.average(kappa_analytic - kappa_from_deflections)
-
-        assert mean_error < 1e-4
-
+class TestSumOfIndividualComponents:
     def test__convergence_equals_sum_of_individual_profile_convergence(self):
         dm = l1d.NFWHilbert(
             mass_at_200=2.5e14, redshift_lens=0.3, redshift_source=1.0
@@ -143,51 +114,38 @@ class TestCombinedProfile:
         assert rho_combined == pytest.approx(rho_sum, 1e-4)
 
 
-class TestSlopeFromDynamics:
-    def test__einstein_mass_from_dynamics_slope_and_normalization_equals_analytic(self):
-        dm = l1d.NFWHilbert(
-            mass_at_200=2.5e12, redshift_lens=0.3, redshift_source=1.0
+class TestParameters:
+    def test__effective_radius_from_combined_profile(self):
+
+        hernquist = l1d.Hernquist(
+            effective_radius=1.0, mass=100.0, redshift_source=0.5, redshift_lens=1.0
         )
-        baryons = l1d.Hernquist(
-            mass=3.4e11, effective_radius=3.2, redshift_lens=0.3, redshift_source=1.0
+
+        combined = l1d.CombinedProfile(profiles=[hernquist])
+
+        assert combined.effective_radius == 1.0
+
+
+class TestConvergence:
+    def test__mean_combined_convergence_within_einstein_radius_equal_to_one(self):
+        nfw = l1d.NFWHilbert(mass_at_200=2.5e13, redshift_lens=0.5, redshift_source=1.0)
+        Hernquist = l1d.Hernquist(
+            mass=2e11, effective_radius=5, redshift_lens=0.5, redshift_source=1.0
         )
-        combined = l1d.CombinedProfile(profiles=[dm, baryons])
+        combined = l1d.CombinedProfile([nfw, Hernquist])
 
-        radii = np.arange(0.2, 8, 0.002)
+        radii = np.arange(0.1, 8, 0.001)
 
-        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
-        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
+        einstein_radius = combined.einstein_radius_in_kpc_from_radii(radii=radii)
 
-        rein = combined.einstein_radius_in_kpc_from_radii(radii=radii)
-        mein = combined.einstein_mass_in_solar_masses_from_radii(radii=radii)
+        integrand = lambda r: 2 * np.pi * r * combined.convergence_from_radii(radii=r)
 
-        mein_from_dyn = mass_einstein(rho0=rho_0, g=slope, Rein=rein * u.kpc)
-
-        assert mein == pytest.approx(mein_from_dyn, 1e-3)
-
-    def test__three_d_mass_from_dynamics_slope_and_normalization_equals_analytic(self):
-        dm = l1d.NFWHilbert(
-            mass_at_200=2.5e12, redshift_lens=0.3, redshift_source=1.0
+        av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
+            np.pi * einstein_radius ** 2
         )
-        baryons = l1d.Hernquist(
-            mass=3.4e11, effective_radius=3.2, redshift_lens=0.3, redshift_source=1.0
-        )
-        combined = l1d.CombinedProfile(profiles=[dm, baryons])
 
-        radii = np.arange(0.2, 8, 0.002)
+        assert av_kappa == pytest.approx(1, 1e-3)
 
-        slope = combined.slope_and_normalisation_via_dynamics(radii=radii)[1]
-        rho_0 = combined.slope_and_normalisation_via_dynamics(radii=radii)[0]
-
-        reff = combined.effective_radius
-        mdyn = combined.three_dimensional_mass_enclosed_within_effective_radius
-
-        mdyn_from_dyn = mass_dynamical(rho0=rho_0, g=slope, Reff=reff * u.kpc)
-
-        assert mdyn == pytest.approx(mdyn_from_dyn, 1e-3)
-
-
-class TestSlopeFromLensing:
     def test__convergence_at_einstein_radius_less_than_one(self):
         dm = l1d.NFWHilbert(
             mass_at_200=2.5e12, redshift_lens=0.3, redshift_source=1.0
@@ -202,6 +160,26 @@ class TestSlopeFromLensing:
         kappa_ein = combined.convergence_at_einstein_radius_from_radii(radii=radii)
 
         assert kappa_ein < 1
+
+    def test__convergence_from_deflections_and_analytic(self):
+        dm = l1d.NFWHilbert(
+            mass_at_200=2.5e14, redshift_lens=0.3, redshift_source=1.0
+        )
+        baryons = l1d.Hernquist(
+            mass=3.4e11, effective_radius=8.4, redshift_lens=0.6, redshift_source=1.2
+        )
+        combined = l1d.CombinedProfile(profiles=[dm, baryons])
+
+        radii = np.arange(0.2, 8, 0.002)
+
+        kappa_analytic = combined.convergence_from_radii(radii=radii)
+        kappa_from_deflections = convergence_via_deflections_from_profile_and_radii(
+            profile=combined, radii=radii
+        )
+
+        mean_error = np.average(kappa_analytic - kappa_from_deflections)
+
+        assert mean_error < 1e-4
 
 
 class TestDarkMatterFraction:
@@ -219,72 +197,3 @@ class TestDarkMatterFraction:
 
         assert f_dm_ein == pytest.approx(1, 1e-4)
 
-
-class TestBestFit:
-    def test__best_fit_einstein_radius_from_intercept_equal_to_from_kappa(self):
-        dm = l1d.NFWHilbert(
-            mass_at_200=2.5e14, redshift_lens=0.3, redshift_source=1.0
-        )
-        baryons = l1d.Hernquist(
-            mass=3.4e11, effective_radius=8.4, redshift_lens=0.6, redshift_source=1.2
-        )
-
-        combined = l1d.CombinedProfile(profiles=[dm, baryons])
-
-        radii = np.arange(0.2, 3, 0.002)
-        mask = combined.mask_radial_range_from_radii(
-            radii=radii, lower_bound=0.5, upper_bound=1.5
-        )
-
-        einstein_radius_c = combined.inferred_einstein_radius_with_error_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
-
-        kappa = combined.inferred_convergence_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
-
-        slope = combined.inferred_slope_with_error_from_mask_and_radii(
-            radii=radii, mask=mask
-        )[0]
-
-        einstein_radius_k = np.mean(
-            radii * np.divide(2 * kappa, 3 - slope) ** (np.divide(1, slope - 1))
-        )
-
-        assert einstein_radius_c[0] == pytest.approx(einstein_radius_k, 1e-3)
-
-    def test__best_fit_einstein_radius_via_deflections_from_intercept_equal_to_from_kappa(
-        self
-    ):
-        dm = l1d.NFWHilbert(
-            mass_at_200=2.5e14, redshift_lens=0.3, redshift_source=1.0
-        )
-        baryons = l1d.Hernquist(
-            mass=3.4e11, effective_radius=8.4, redshift_lens=0.6, redshift_source=1.2
-        )
-
-        combined = l1d.CombinedProfile(profiles=[dm, baryons])
-
-        radii = np.arange(0.2, 3, 0.002)
-        mask = combined.mask_radial_range_from_radii(
-            radii=radii, lower_bound=0.5, upper_bound=1.5
-        )
-
-        einstein_radius_c = combined.inferred_einstein_radius_via_deflections_with_error_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
-
-        kappa = combined.inferred_convergence_via_deflections_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
-
-        slope = combined.inferred_slope_via_deflections_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
-
-        einstein_radius_k = np.mean(
-            radii * np.divide(2 * kappa, 3 - slope) ** (np.divide(1, slope - 1))
-        )
-
-        assert einstein_radius_c == pytest.approx(einstein_radius_k, 1e-3)

@@ -70,7 +70,7 @@ class PowerLawFit:
 
     def convergence_via_dynamics(self):
         einstein_radius = self.profile.einstein_radius_in_kpc_from_radii(radii=self.radii)
-        slope = self.profile.slope_and_normalisation_via_dynamics(radii=self.radii)[1]
+        slope = self.slope_and_normalisation_via_dynamics()[1]
 
         power_law = oned.SphericalPowerLaw(
             einstein_radius=einstein_radius,
@@ -100,7 +100,7 @@ class PowerLawFit:
         return np.divide(xi_two, 2) + 2
 
     def convergence_via_lensing(self):
-        slope = self.profile.slope_via_lensing(radii=self.radii)
+        slope = self.slope_via_lensing()
 
         einstein_radius = self.profile.einstein_radius_in_kpc_from_radii(radii=self.radii)
 
@@ -115,9 +115,9 @@ class PowerLawFit:
     
     def convergence_coefficients(
             self):
-        kappa = self.convergence_from_radii(radii=radii)
+        kappa = self.profile.convergence_from_radii(radii=self.radii)
 
-        coeffs, cov = np.polyfit(np.log(radii), np.log(kappa), w=self.mask, deg=1, cov=True)
+        coeffs, cov = np.polyfit(np.log(self.radii), np.log(kappa), w=self.mask, deg=1, cov=True)
 
         error = np.sqrt(np.diag(cov))
 
@@ -132,7 +132,7 @@ class PowerLawFit:
 
         return 1 - (ssres / sstot)
 
-    def slope_with_error(self, mask, radii):
+    def slope_with_error(self):
         coeff, error = self.convergence_coefficients()[:, 0]
 
         slope = np.abs(coeff - 1)
@@ -159,7 +159,7 @@ class PowerLawFit:
 
         return np.array([einstein_radius, error])
 
-    def einstein_mass_in_solar_masses_from_mask_and_radii(self):
+    def einstein_mass_in_solar_masses(self):
         einstein_radius_rad = (
                 self.einstein_radius_with_error()
                 * u.arcsec
@@ -174,84 +174,70 @@ class PowerLawFit:
 
     ###  FROM HERE ON IS OLD CODE CALCULATING SLOPES AS A BEST FIT TO THE DEFLECTION ANGLES
 
-    def deflections_coefficients_from_mask_and_radii(
-            self, mask, radii
+    def deflections_coefficients(
+            self
     ):
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-        alpha = self.deflections_from_radii(radii=radii)
+        alpha = self.profile.deflections_from_radii(radii=self.radii)
 
-        coeffs, cov = np.polyfit(np.log(radii), np.log(alpha), w=mask, deg=1, cov=True)
+        coeffs, cov = np.polyfit(np.log(self.radii), np.log(alpha), w=self.mask, deg=1, cov=True)
 
         error = np.sqrt(np.diag(cov))
 
         return np.array([coeffs, error])
 
-    def deflections_from_mask_and_radii(self, mask, radii):
-        coeffs = self.deflections_coefficients_from_mask_and_radii(
-            radii=radii, mask=mask
-        )[0]
+    def deflections(self):
+        coeffs = self.deflections_coefficients()[0]
 
         poly = np.poly1d(coeffs)
 
         best_fit = lambda radius: np.exp(poly(np.log(radius)))
 
-        return best_fit(radii)
+        return best_fit(self.radii)
 
-    def convergence_via_deflections_from_mask_and_radii(
-            self, mask, radii
+    def convergence_via_deflections(
+            self
     ):
-        alpha = self.deflections_from_mask_and_radii(
-            radii=radii, mask=mask
+        alpha = self.deflections(
         )
 
-        return 0.5 * ((alpha / radii) + np.gradient(alpha, radii[:]))
+        return 0.5 * ((alpha / self.radii) + np.gradient(alpha, self.radii[:]))
 
-    def convergence_coefficients_via_deflections_from_mask_and_radii(
-            self, mask, radii
+    def convergence_coefficients_via_deflections(
+            self
     ):
-        best_fit_kappa = self.convergence_via_deflections_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
+        best_fit_kappa = self.convergence_via_deflections()
 
-        return np.polyfit(np.log(radii), np.log(best_fit_kappa), deg=1)
+        return np.polyfit(np.log(self.radii), np.log(best_fit_kappa), deg=1)
 
-    def slope_via_deflections_from_mask_and_radii(self, mask, radii):
-        coeff = self.convergence_coefficients_via_deflections_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
+    def slope_via_deflections(self):
+        coeff = self.convergence_coefficients_via_deflections()
 
         return np.abs(coeff[0] - 1)
 
-    def einstein_radius_via_deflections_with_error_from_mask_and_radii(
-            self, mask, radii
+    def einstein_radius_via_deflections_with_error(
+            self
     ):
-        normalization = self.convergence_coefficients_via_deflections_from_mask_and_radii(
-            radii=radii, mask=mask
-        )[
+        normalization = self.convergence_coefficients_via_deflections()[
             1
         ]
 
-        slope = self.slope_via_deflections_from_mask_and_radii(
-            radii=radii, mask=mask
-        )
+        slope = self.slope_via_deflections()
 
         return np.exp(
             np.divide(normalization - np.log(np.divide(3 - slope, 2)), slope - 1)
         )
 
-    def einstein_mass_in_solar_masses_via_deflections_from_mask_and_radii_and_redshifts(
-            self, radii, mask, redshift_source, redshift_lens
+    def einstein_mass_in_solar_masses_via_deflections(
+            self
     ):
         einstein_radius_rad = (
-                self.einstein_radius_via_deflections_with_error_from_mask_and_radii(
-                    radii=radii, mask=mask
-                )
+                self.einstein_radius_via_deflections_with_error()
                 * u.arcsec
         ).to(u.rad)
 
-        D_s = cosmo.angular_diameter_distance(redshift_source).to(u.m)
-        D_l = cosmo.angular_diameter_distance(redshift_lens).to(u.m)
-        D_ls = cosmo.angular_diameter_distance_z1z2(redshift_lens, redshift_source).to(
+        D_s = cosmo.angular_diameter_distance(self.profile.redshift_source).to(u.m)
+        D_l = cosmo.angular_diameter_distance(self.profile.redshift_lens).to(u.m)
+        D_ls = cosmo.angular_diameter_distance_z1z2(self.profile.redshift_lens, self.profile.redshift_source).to(
             u.m
         )
         einstein_radius = (einstein_radius_rad * D_l).value

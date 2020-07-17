@@ -2,8 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import pandas as pd
-from lens1d.profiles import combined as cp
-from lens1d.profiles import oned as profiles
+import lens1d as l1d
 
 slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".format(
     os.path.dirname(os.path.realpath(__file__))
@@ -67,25 +66,27 @@ f = open("slacs_like_test_1d", "a+")
 
 for i in range(len(lens_name)):
 
-    baryons = profiles.Hernquist(
+    baryons = l1d.Hernquist(
         mass=10 ** slacs["log[M*/M]_chab"][lens_name[i]],
         effective_radius=slacs["R_eff"][lens_name[i]],
         redshift_lens=slacs["z_lens"][lens_name[i]],
         redshift_source=slacs["z_source"][lens_name[i]],
     )
-    DM = profiles.NFWHilbert(
+    DM = l1d.NFWHilbert(
         mass_at_200=slacs["M200"][lens_name[i]],
         redshift_lens=slacs["z_lens"][lens_name[i]],
         redshift_source=slacs["z_source"][lens_name[i]],
     )
-    true_profile = cp.CombinedProfile(profiles=[baryons, DM])
+    
+    true_profile = l1d.CombinedProfile(profiles=[baryons, DM])
 
-    no_mask = true_profile.mask_radial_range_from_radii(
-        lower_bound=0, upper_bound=1, radii=radii
-    )
     mask_einstein_radius = true_profile.mask_radial_range_from_radii(
         lower_bound=0.8, upper_bound=1.2, radii=radii
     )
+    
+    fit_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=mask_einstein_radius)
+    
+    fit_no_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=None)
 
     einstein_radius = true_profile.einstein_radius_in_kpc_from_radii(radii=radii)
 
@@ -95,33 +96,23 @@ for i in range(len(lens_name)):
 
     three_d_mass = true_profile.three_dimensional_mass_enclosed_within_effective_radius
 
-    straightness = true_profile.power_law_r_squared_value(radii=radii, mask=no_mask)
+    straightness = fit_no_mask.r_squared_value()
 
-    lensing_slope = true_profile.slope_via_lensing(radii=radii)
+    lensing_slope = fit_no_mask.slope_via_lensing()
 
-    dynamics_slope = true_profile.slope_and_normalisation_via_dynamics(radii=radii)[1]
+    dynamics_slope = fit_no_mask.slope_and_normalisation_via_dynamics()[1]
 
-    kappa_fit_slope = true_profile.inferred_slope_with_error_from_radii(
-        radii=radii
-    )[0]
+    kappa_fit_slope = fit_no_mask.slope_with_error()[0]
 
-    einstein_radius_best_fit = true_profile.inferred_einstein_radius_with_error_from_radii(
-        radii=radii
-    )[
+    einstein_radius_best_fit = fit_no_mask.einstein_radius_with_error()[
         0
     ]
 
-    kappa_ein_fit_slope = true_profile.inferred_slope_with_error_from_mask_and_radii(
-        mask=mask_einstein_radius, radii=radii
-    )[
-        0
-    ]
+    kappa_ein_fit_slope = fit_mask.slope_with_error()[0]
 
     f_dm_eff = true_profile.dark_matter_mass_fraction_within_effective_radius
 
-    f_dm_ein = true_profile.dark_matter_mass_fraction_within_einstein_radius_from_radii(
-        radii=radii
-    )
+    f_dm_ein = true_profile.dark_matter_mass_fraction_within_einstein_radius_from_radii(radii=radii)
 
     f.write(
         str(lens_name[i])
@@ -156,9 +147,9 @@ for i in range(len(lens_name)):
     kappa_baryons = baryons.convergence_from_radii(radii=radii)
     kappa_DM = DM.convergence_from_radii(radii=radii)
     kappa_total = true_profile.convergence_from_radii(radii=radii)
-    kappa_dynamics = true_profile.power_law_convergence_via_dynamics(radii=radii)
-    kappa_lensing = true_profile.power_law_convergence_via_lensing(radii=radii)
-    kappa_best_fit = true_profile.inferred_convergence_from_radii(radii=radii)
+    kappa_dynamics = fit_no_mask.convergence_via_dynamics()
+    kappa_lensing = fit_no_mask.convergence_via_lensing()
+    kappa_best_fit = fit_no_mask.convergence()
 
     fig1 = plt.figure(1)
     plt.loglog(

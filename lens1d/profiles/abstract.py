@@ -106,6 +106,7 @@ class AbstractProfile:
         return self.convergence_from_radii(radii=einstein_radius)
 
     def f_func(self, x):
+        x = x+0j
         f = np.where(
             x > 1,
             1 - 2 * np.arctan(np.sqrt((x - 1) / (x + 1))) / np.sqrt(x ** 2 - 1),

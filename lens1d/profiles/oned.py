@@ -73,7 +73,7 @@ class Hernquist(abstract.AbstractProfile, StellarProfile):
 
     def surface_mass_density_from_radii(self, radii):
 
-        x = np.array(radii / self.scale_radius) + 0j
+        x = np.array(radii / self.scale_radius)
         f = self.f_func(x)
 
         return np.where(
@@ -84,7 +84,7 @@ class Hernquist(abstract.AbstractProfile, StellarProfile):
         )
 
     def convergence_from_radii(self, radii):
-        x = np.array(radii / self.scale_radius) + 0j
+        x = np.array(radii / self.scale_radius)
         f = self.f_func(x)
 
         return np.real(np.where(
@@ -94,7 +94,7 @@ class Hernquist(abstract.AbstractProfile, StellarProfile):
         )))
 
     def deflections_from_radii(self, radii):
-        x = np.array(radii / self.scale_radius) + 0j
+        x = np.array(radii / self.scale_radius)
         f = self.f_func(x)
 
         return np.real(np.where(
@@ -143,21 +143,21 @@ class NFWHilbert(abstract.AbstractProfile, DarkProfile):
         return np.divide(self.rho_s, x * (1 + x) ** 2)
 
     def surface_mass_density_from_radii(self, radii):
-        x = np.divide(radii, self.scale_radius) + 0j
+        x = np.divide(radii, self.scale_radius)
         f = self.f_func(x)
         sigma = 2 * self.rho_s * self.scale_radius * (np.array(f) / (x ** 2 - 1))
 
         return np.where(f == 0, 0, np.real(sigma))
 
     def convergence_from_radii(self, radii):
-        x = np.array(radii / self.scale_radius) + 0j
+        x = np.array(radii / self.scale_radius)
         f = self.f_func(x)
         kappa = 2 * self.kappa_s * np.array(f) / (x ** 2 - 1)
 
         return np.where(f == 0, 0, np.real(kappa))
 
     def deflections_from_radii(self, radii):
-        x = np.divide(radii, self.scale_radius) + 0j
+        x = np.divide(radii, self.scale_radius)
         f = self.f_func(x)
         return np.real(
             4

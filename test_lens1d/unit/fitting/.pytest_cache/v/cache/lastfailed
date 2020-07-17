@@ -1,0 +1,4 @@
+{
+  "test_powerlaw_fit.py::TestBestFit::()::test__best_fit_einstein_radius_from_intercept_equal_to_from_kappa": true,
+  "test_powerlaw_fit.py::TestBestFit::()::test__best_fit_einstein_radius_via_deflections_from_intercept_equal_to_from_kappa": true
+}

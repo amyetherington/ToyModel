@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 from astropy import cosmology
+from scipy import integrate
+
 
 import autogalaxy as ag
 import lens1d as l1d
 
-# TODO : Some tests elsewhere use Planck15, you should aim to make them all use 1 cosmolgoy.
-
-cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
+cosmo = cosmology.Planck15
 
 
 def convergence_via_deflections_from_profile_and_radii(profile, radii):
@@ -17,9 +17,6 @@ def convergence_via_deflections_from_profile_and_radii(profile, radii):
     kappa = 0.5 * ((alpha / radii) + np.gradient(alpha, radii[:]))
 
     return kappa
-
-
-# TODO : These tests are great!
 
 
 class TestSphericalPowerLaw:
@@ -123,6 +120,105 @@ class TestSphericalPowerLaw:
 
         assert sigma_crit == pytest.approx(autolens_sigma_crit, 1e-4)
 
+    def test__mean_power_law_convergence_within_einstein_radius_equal_to_one(self):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2.3, redshift_source=0.8, redshift_lens=0.3
+        )
+
+        integrand = lambda r: 2 * np.pi * r * power_law.convergence_from_radii(radii=r)
+
+        av_kappa = integrate.quad(integrand, 0, power_law.einstein_radius)[0] / (
+            np.pi * power_law.einstein_radius ** 2
+        )
+
+        assert av_kappa == pytest.approx(1, 1e-3)
+
+    def test__mean_power_law_convergence_within_calculated_einstein_radius_equal_to_one(
+        self
+    ):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.6, slope=2.3, redshift_source=0.8, redshift_lens=0.3
+        )
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        einstein_radius = power_law.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        integrand = lambda r: 2 * np.pi * r * power_law.convergence_from_radii(radii=r)
+
+        av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
+            np.pi * einstein_radius ** 2
+        )
+
+        assert av_kappa == pytest.approx(1, 1e-3)
+
+    def test__shear_isothermal_sphere_equals_analytic(self):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
+        )
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        shear_isothermal = power_law.shear_from_radii(radii=radii)
+        shear_isothermal_analytic = power_law.einstein_radius / (2 * radii)
+
+        mean_error = np.average(shear_isothermal - shear_isothermal_analytic)
+
+        assert mean_error < 1e-4
+
+    def test__shear_isothermal_sphere_equals_convergence(self):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
+        )
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        shear_isothermal = power_law.shear_from_radii(radii=radii)
+        kappa_isothermal = power_law.convergence_from_radii(radii=radii)
+
+        mean_error = np.average(shear_isothermal - kappa_isothermal)
+
+        assert mean_error < 1e-4
+
+    def test__shear_equals_analytic(self):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
+        )
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        shear_isothermal = power_law.shear_from_radii(radii=radii)
+        shear_isothermal_analytic = np.divide(power_law.slope - 1, 2) * (
+            np.divide(power_law.einstein_radius, radii) ** (power_law.slope - 1)
+        )
+
+        mean_error = np.average(shear_isothermal - shear_isothermal_analytic)
+
+        assert mean_error < 1e-4
+
+    def test__isoyhemral_tangential_eigenvalue_equal_to_zero_at_einstein_radius(self):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
+        )
+
+        radii = np.arange(0.2, 3, 0.002)
+
+        eigenvalue = power_law.tangential_eigenvalue_from_radii(radii=radii)
+
+        index = np.argmin(np.abs(np.array(radii) - power_law.einstein_radius))
+
+        assert eigenvalue[index] < 1e-4
+
+    def test__convergence_at_einstein_radius_less_than_one(self):
+        power_law = l1d.SphericalPowerLaw(
+            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
+        )
+        radii = np.arange(0.2, 3, 0.002)
+
+        kappa_ein = power_law.convergence_at_einstein_radius_from_radii(radii=radii)
+
+        assert kappa_ein < 1
+
 
 class TestHernquist:
     def test__convergence_from_deflections_and_analytic(self):
@@ -157,11 +253,11 @@ class TestHernquist:
             mass=3.4e10, effective_radius=1.8153, redshift_lens=0.3, redshift_source=0.8
         )
 
-        kappa = Hernquist.convergence_from_radii(radii=np.array([0.5, 1, 1.5]))
+        kappa = Hernquist.convergence_from_radii(radii=np.array([0.5,  1.5]))
 
         kappa_s = Hernquist.kappa_s
 
-        assert kappa == pytest.approx(np.array([1.318168568, 0, 0.2219485564]), 1e-3)
+        assert kappa == pytest.approx(np.array([1.318168568,  0.2219485564]), 1e-3)
         assert kappa_s == pytest.approx(1.758883964, 1e-3)
 
     def test__deflection_angle_values_correct(self):
@@ -190,6 +286,58 @@ class TestHernquist:
         rho = Hernquist.density_from_radii(radii=np.array([0.5, 1, 1.5]))
 
         assert rho == pytest.approx(np.array([3206677372, 676408508, 230880770]), 1e-3)
+
+    def test__mean_Hernquist_convergence_within_einstein_radius_equal_to_one(self):
+        Hernquist = l1d.Hernquist(
+            mass=3.4e11, effective_radius=8.4, redshift_lens=0.6, redshift_source=1.2
+        )
+        radii = np.arange(0.2, 100, 0.001)
+
+        integrand = lambda r: 2 * np.pi * r * Hernquist.convergence_from_radii(radii=r)
+
+        einstein_radius = Hernquist.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
+            np.pi * einstein_radius ** 2
+        )
+
+        assert av_kappa == pytest.approx(1, 1e-3)
+
+    def test__hernquist__mass_within_effective_radius_equal_to_half_total_two_d_mass(
+        self
+    ):
+        Hernquist = l1d.Hernquist(
+            mass=3.4e10, effective_radius=8.4, redshift_lens=0.3, redshift_source=0.8
+        )
+
+        mass_2d = Hernquist.two_dimensional_mass_enclosed_within_radii(
+            radii=Hernquist.effective_radius
+        )
+
+        assert mass_2d == pytest.approx(Hernquist.mass * 0.5, 1e-3)
+
+    def test__hernquist__mass_within_half_mass_radius_equal_to_half_total_three_d_mass(
+        self
+    ):
+        Hernquist = l1d.Hernquist(
+            mass=3.4e10, effective_radius=8.4, redshift_lens=0.3, redshift_source=0.8
+        )
+
+        mass_3d = Hernquist.three_dimensional_mass_enclosed_within_radii(
+            radii=Hernquist.half_mass_radius
+        )
+
+        assert mass_3d == pytest.approx(Hernquist.mass * 0.5, 1e-3)
+
+    def test__convergence_at_einstein_radius_less_than_one(self):
+        Hernquist = l1d.Hernquist(
+            mass=3.4e10, effective_radius=8.4, redshift_lens=0.3, redshift_source=0.8
+        )
+        radii = np.arange(0.2, 3, 0.002)
+
+        kappa_ein = Hernquist.convergence_at_einstein_radius_from_radii(radii=radii)
+
+        assert kappa_ein < 1
 
 
 class TestNFWHilbert:
@@ -322,3 +470,25 @@ class TestNFWHilbert:
         )
 
         assert einstein_radius == pytest.approx(ag_einstein_radius, 1e-2)
+
+    def test__mean_NFW_convergence_within_einstein_radius_equal_to_one(self):
+        nfw = l1d.NFWHilbert(mass_at_200=2.5e13, redshift_lens=0.6, redshift_source=1.2)
+        radii = np.arange(0.01, 3, 0.001)
+
+        einstein_radius = nfw.einstein_radius_in_kpc_from_radii(radii=radii)
+
+        integrand = lambda r: 2 * np.pi * r * nfw.convergence_from_radii(radii=r)
+
+        av_kappa = integrate.quad(integrand, 0, einstein_radius)[0] / (
+            np.pi * einstein_radius ** 2
+        )
+
+        assert av_kappa == pytest.approx(1, 1e-3)
+
+    def test__convergence_at_einstein_radius_less_than_one(self):
+        nfw = l1d.NFWHilbert(mass_at_200=2.5e12, redshift_lens=0.3, redshift_source=0.8)
+        radii = np.arange(0.2, 30, 0.002)
+
+        kappa_ein = nfw.convergence_at_einstein_radius_from_radii(radii=radii)
+
+        assert kappa_ein < 1

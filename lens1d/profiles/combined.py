@@ -119,7 +119,7 @@ class CombinedProfile(abstract.AbstractProfile):
         dm_mass = dm.two_dimensional_mass_enclosed_within_radii(
             radii=self.effective_radius
         )
-        total_mass = self.three_dimensional_mass_enclosed_within_effective_radius
+        total_mass = self.two_dimensional_mass_enclosed_within_effective_radius
 
         return dm_mass / total_mass
 
@@ -128,7 +128,7 @@ class CombinedProfile(abstract.AbstractProfile):
         einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
 
         dm_mass = dm.two_dimensional_mass_enclosed_within_radii(radii=einstein_radius)
-        total_mass = self.three_dimensional_mass_enclosed_within_radii(
+        total_mass = self.two_dimensional_mass_enclosed_within_radii(
             radii=einstein_radius
         )
 

@@ -32,7 +32,7 @@ slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".for
 slacs = pd.read_excel(slacs_path, index_col=0)
 del slacs.index.name
 
-fig2 = plt.figure(2)
+fig1 = plt.figure(1)
 plt.scatter(data["r_ein"], data["f_dm_eff"], label="slope from dynamics", color="cyan")
 plt.xlabel("r ein", fontsize=14)
 plt.ylabel("f_dm_eff", fontsize=14)
@@ -47,7 +47,7 @@ plt.legend()
 
 
 
-fig1 = plt.figure(1)
+fig3 = plt.figure(3)
 plt.scatter(
     data["straightness"], data["dyn_slope"], label="slope from dynamics", color="cyan"
 )
@@ -68,7 +68,7 @@ plt.ylabel("Slope", fontsize=14)
 plt.legend()
 
 
-fig2 = plt.figure(2)
+fig4 = plt.figure(4)
 plt.scatter(data["r_ein"], data["dyn_slope"], label="slope from dynamics", color="cyan")
 plt.scatter(
     data["r_ein"], data["lens_slope"], label="slope from lensing", color="magenta"
@@ -81,7 +81,7 @@ plt.ylabel("Slope", fontsize=14)
 plt.legend()
 
 
-fig3 = plt.figure(3)
+fig5 = plt.figure(5)
 plt.scatter(
     data["f_dm_ein"], data["dyn_slope"], label="slope from dynamics", color="cyan"
 )
@@ -104,7 +104,7 @@ plt.xlabel("f_dm ein", fontsize=14)
 plt.ylabel("Slope", fontsize=14)
 plt.legend()
 
-fig4 = plt.figure(4)
+fig6 = plt.figure(6)
 plt.scatter(
     data["f_dm_eff"], data["dyn_slope"], label="slope from dynamics", color="cyan"
 )
@@ -121,7 +121,7 @@ plt.xlabel("f_dm eff", fontsize=14)
 plt.ylabel("Slope", fontsize=14)
 plt.legend()
 
-fig4 = plt.figure(5)
+fig7 = plt.figure(7)
 plt.scatter(data["m_dyn"], data["dyn_slope"], label="slope from dynamics", color="cyan")
 plt.scatter(
     data["m_dyn"], data["lens_slope"], label="slope from lensing", color="magenta"

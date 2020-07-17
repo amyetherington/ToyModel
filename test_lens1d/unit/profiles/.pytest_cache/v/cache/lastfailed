@@ -1,0 +1,4 @@
+{
+  "test_abstract.py::TestShearAndEigenvalue::()::test__hernquist_tangential_eigenvalue_equal_to_from_alpha": true,
+  "test_abstract.py::TestShearAndEigenvalue::()::test__tangential_eigenvalue_equal_to_from_alpha": true
+}
