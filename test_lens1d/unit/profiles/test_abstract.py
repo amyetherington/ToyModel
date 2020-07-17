@@ -4,7 +4,7 @@ import pytest
 from astropy import cosmology
 from scipy import integrate
 
-import autogalaxy as ag
+
 import lens1d as l1d
 
 cosmo = cosmology.Planck15
@@ -405,17 +405,7 @@ class TestFFunction:
 
 
 class TestSlopeFromLensing:
-    def test__xi_two_equal_to_zero_for_sis(self):
-        power_law = l1d.SphericalPowerLaw(
-            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
-        )
-        radii = np.arange(0.2, 3, 0.002)
-
-        xi_two = power_law.xi_two(radii=radii)
-
-        assert xi_two == pytest.approx(0, 1e-3)
-
-    def test__power_law_convergence_at_einstein_radius_less_than_one(self):
+    def test__convergence_at_einstein_radius_less_than_one(self):
         power_law = l1d.SphericalPowerLaw(
             einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
         )
@@ -425,7 +415,6 @@ class TestSlopeFromLensing:
 
         assert kappa_ein < 1
 
-    def test__hernquist_convergence_at_einstein_radius_less_than_one(self):
         Hernquist = l1d.Hernquist(
             mass=3.4e10, effective_radius=8.4, redshift_lens=0.3, redshift_source=0.8
         )
@@ -435,20 +424,9 @@ class TestSlopeFromLensing:
 
         assert kappa_ein < 1
 
-    def test__nfw_convergence_at_einstein_radius_less_than_one(self):
         nfw = l1d.NFWHilbert(mass_at_200=2.5e12, redshift_lens=0.3, redshift_source=0.8)
         radii = np.arange(0.2, 30, 0.002)
 
         kappa_ein = nfw.convergence_at_einstein_radius_from_radii(radii=radii)
 
         assert kappa_ein < 1
-
-    def test__slope_equal_to_power_law_input(self):
-        power_law = l1d.SphericalPowerLaw(
-            einstein_radius=1.8, slope=2, redshift_source=0.8, redshift_lens=0.3
-        )
-        radii = np.arange(0.2, 3, 0.002)
-
-        slope_lensing = power_law.slope_via_lensing(radii=radii)
-
-        assert slope_lensing == pytest.approx(power_law.slope, 1e-4)

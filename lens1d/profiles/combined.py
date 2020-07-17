@@ -6,35 +6,7 @@ from lens1d.profiles import oned
 from scipy import optimize
 from scipy.special import gamma
 
-cosmo = cosmology.FlatLambdaCDM(H0=70, Om0=0.3)
-
-
-def mass_dynamical(rho0, g, Reff, r0=1 * u.kpc):
-    return ((4 * np.pi * rho0 / (3 - g)) * Reff ** 3 * (Reff / r0) ** -g).to("Msun")
-
-
-def mass_einstein(rho0, g, Rein, r0=1 * u.kpc):
-    return (
-        (2 * np.pi ** 1.5 * gamma(0.5 * (g - 1)) / ((3 - g) * gamma(0.5 * g)))
-        * rho0
-        * Rein ** 3
-        * (Rein / r0) ** -g
-    ).to("Msun")
-
-
-def vector_residuals(params, mass_dynamical_true, mass_einstein_true, Reff, Rein):
-
-    log_rho0, g = params
-
-    rho0 = 10 ** log_rho0 * u.Msun / u.kpc ** 3
-
-    mass_dynamical_prediction = mass_dynamical(rho0, g, Reff)
-    mass_einstein_prediction = mass_einstein(rho0, g, Rein)
-    return (
-        np.log10((mass_dynamical_prediction / mass_dynamical_true).to("")),
-        np.log10((mass_einstein_prediction / mass_einstein_true).to("")),
-    )
-
+cosmo = cosmology.Planck15
 
 class CombinedProfile(abstract.AbstractProfile):
     def __init__(self, profiles=None):
@@ -48,7 +20,7 @@ class CombinedProfile(abstract.AbstractProfile):
         )
 
     @classmethod
-    def from_dark_matter_fraction_within_einstein_radius(cls, hernquist, nfw, einstein_mass):
+    def from_dark_matter_fraction_within_effective_radius(cls, hernquist, nfw, effective_radius):
 
         # TODO : The input hernquist and nfw will not give us the desired dark matter fraction at the einstein radius
         # TODO : and will not give an einstein mass corresponing to the input einstein mass.
@@ -162,68 +134,6 @@ class CombinedProfile(abstract.AbstractProfile):
 
         return dm_mass / total_mass
 
-    def slope_and_normalisation_via_dynamics(self, radii):
-
-        mass_ein = self.einstein_mass_in_solar_masses_from_radii(radii=radii)
-
-        r_ein = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
-        r_dyn = self.effective_radius
-
-        mass_dyn = self.three_dimensional_mass_enclosed_within_radii(radii=r_dyn)
-
-        init_guess = np.array([7, 1.9])
-
-        root_finding_data = optimize.root(
-            vector_residuals,
-            init_guess,
-            args=(mass_dyn * u.Msun, mass_ein * u.Msun, r_dyn * u.kpc, r_ein * u.kpc),
-            method="hybr",
-            options={"xtol": 0.0001},
-        )
-
-        return np.array([10 ** root_finding_data.x[0], root_finding_data.x[1]])
-
-    def einstein_radius_via_dynamics(self, radii):
-        rho_0, slope = self.slope_and_normalisation_via_dynamics(radii=radii)
-
-        A = np.divide(
-            gamma(slope / (2 * self.critical_surface_density_of_lens)),
-            gamma((slope - 1) / 2) * np.sqrt(np.pi),
-        )
-
-        return ((2 * rho_0) / (A * (3 - slope))) ** (1 - slope)
-
-    # TODO : Delete? Surely we can just do this via the individual PowerLaw class.
-
-    def power_law_convergence_via_dynamics(self, radii):
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-        slope = self.slope_and_normalisation_via_dynamics(radii=radii)[1]
-
-        power_law = oned.SphericalPowerLaw(
-            einstein_radius=einstein_radius,
-            slope=slope,
-            redshift_lens=self.redshift_lens,
-            redshift_source=self.redshift_source,
-        )
-
-        return power_law.convergence_from_radii(radii=radii)
-
-    def power_law_convergence_via_lensing(self, radii):
-        slope = self.slope_via_lensing(radii=radii)
-
-        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
-
-        power_law = oned.SphericalPowerLaw(
-            einstein_radius=einstein_radius,
-            slope=slope,
-            redshift_lens=self.redshift_lens,
-            redshift_source=self.redshift_source,
-        )
-
-        return power_law.convergence_from_radii(radii=radii)
-
-    # should masks be a separate object and not part of a combined profile???
     def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
         index1 = np.argmin(np.abs(np.array(radii) - (radii[0] + lower_bound)))
         index2 = np.argmin(np.abs(np.array(radii) - (radii[0] + upper_bound)))
