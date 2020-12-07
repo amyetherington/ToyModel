@@ -52,7 +52,7 @@ class PowerLawFit:
 
         r_ein = self.profile.einstein_radius_in_kpc_from_radii(radii=self.radii)
 
-        r_dyn = self.profile.effective_radius
+        r_dyn = self.profile.effective_radius*1.33
 
         mass_dyn = self.profile.three_dimensional_mass_enclosed_within_radii(radii=r_dyn)
 
@@ -63,8 +63,11 @@ class PowerLawFit:
             init_guess,
             args=(mass_dyn * u.Msun, mass_ein * u.Msun, r_dyn * u.kpc, r_ein * u.kpc),
             method="hybr",
-            options={"xtol": 0.0001},
+            options={"xtol": 1.5e-8},
         )
+
+        print(root_finding_data.success)
+        print(root_finding_data.message)
 
         return np.array([10 ** root_finding_data.x[0], root_finding_data.x[1]])
 

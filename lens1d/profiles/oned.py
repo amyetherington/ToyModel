@@ -1,6 +1,7 @@
 import numpy as np
 from astropy import cosmology
 from astropy import units as u
+from scipy.integrate import quad
 
 from colossus.halo.concentration import concentration as col_concentration
 from colossus.cosmology import cosmology as col_cosmology
@@ -165,3 +166,76 @@ class NFWHilbert(abstract.AbstractProfile, DarkProfile):
             * self.scale_radius
             * np.divide((np.log(x / 2) + np.array(1 - f)), x)
         )
+
+
+class generalisedNFW(abstract.AbstractProfile, DarkProfile):
+    def __init__(self, mass_at_200, beta, redshift_source, redshift_lens):
+
+        super().__init__(redshift_lens=redshift_lens, redshift_source=redshift_source)
+
+        self.beta = beta
+        self.mass_at_200 = mass_at_200
+        col_cosmo = col_cosmology.setCosmology("planck15")
+        self.concentration = col_concentration(
+            self.mass_at_200 * col_cosmo.h, "200c", self.redshift_lens, model="ludlow16"
+        )
+        self.radius_at_200 = (
+            self.mass_at_200
+            * u.solMass
+            / (
+                1.333
+                * np.pi
+                * 200
+                * cosmo.critical_density(self.redshift_lens).to("Msun/kpc**3")
+            )
+        ) ** (1.0 / 3)
+        self.scale_radius = self.radius_at_200.value / self.concentration
+        self.rho_s = self.mass_at_200 / (
+            4
+            * np.pi
+            * self.scale_radius ** 3
+            * (
+                np.log(1.0 + self.concentration)
+                - self.concentration / (1.0 + self.concentration)
+            )
+        )
+        self.kappa_s = np.divide(
+            self.rho_s * self.scale_radius, self.critical_surface_density_of_lens
+        )
+
+    def density_from_radii(self, radii):
+        x = np.divide(radii, self.scale_radius)
+        return np.divide(self.rho_s, x**self.beta * (1 + x) ** (3-self.beta))
+
+    def convergence_from_radii(self, radii):
+        def integral_y(y, x):
+            return (y + x) ** (self.beta - 4) * (1 - np.sqrt(1 - y ** 2))
+
+        radii = (1.0 / self.scale_radius) * radii
+
+        for index in range(len(radii)):
+
+            integral_y_value = quad(
+                integral_y,
+                a=0.0,
+                b=1.0,
+                args=radii[index],
+            )
+
+            radii[index] = (
+                2.0
+                * self.kappa_s
+                * (radii[index] ** (1 - self.beta))
+                * (
+                    (1 + radii[index]) ** (self.beta - 3)
+                    + ((3 - self.beta) * integral_y_value[0])
+                )
+            )
+
+        return radii
+
+    def deflections_from_radii(self, radii):
+        return print("idk")
+
+    def surface_mass_density_from_radii(self, radii):
+        return print("idk")

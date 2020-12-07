@@ -8,6 +8,14 @@ from scipy.special import gamma
 
 cosmo = cosmology.Planck15
 
+def residuals(m200, r_eff, dm_mass_within_r_eff_true, redshift_lens, redshift_source):
+
+    nfw = oned.NFWHilbert(mass_at_200=m200, redshift_lens=redshift_lens, redshift_source=redshift_source)
+
+    dm_mass_within_r_eff_prediction = nfw.three_dimensional_mass_enclosed_within_radii(radii=r_eff)
+
+    return np.log10((dm_mass_within_r_eff_prediction / dm_mass_within_r_eff_true))
+
 class CombinedProfile(abstract.AbstractProfile):
     def __init__(self, profiles=None):
 
@@ -20,20 +28,53 @@ class CombinedProfile(abstract.AbstractProfile):
         )
 
     @classmethod
-    def from_dark_matter_fraction_within_effective_radius(cls, hernquist, nfw, effective_radius):
+    def from_hernquist_and_dark_matter_fraction_within_effective_radius(cls, hernquist, dark_matter_fraction):
 
-        # TODO : The input hernquist and nfw will not give us the desired dark matter fraction at the einstein radius
-        # TODO : and will not give an einstein mass corresponing to the input einstein mass.
+        stellar_mass_within_r_eff = hernquist.three_dimensional_mass_enclosed_within_radii(radii=hernquist.effective_radius)
 
-        # TODO : Below, we need a function which compures the correct values for hernquist.mass and nfw.mass_at_200
-        # TODO : that does. This may have some analytic form, but could also be done with a root
+        dm_mass_within_r_eff_from_f_dm = np.divide(dark_matter_fraction*stellar_mass_within_r_eff, 1 - dark_matter_fraction)
 
-        # MAGIC FUNCTION
+        init_guess = np.array([1e13])
 
-        # hernquist.mass = new_hernquist_mass
-        # nfw.mass_at_200 = new_nfw_mass_at_200
+        root_finding_data = optimize.root(
+            residuals,
+            init_guess,
+            args=(hernquist.effective_radius, dm_mass_within_r_eff_from_f_dm, hernquist.redshift_lens, hernquist.redshift_source),
+            method="hybr",
+            options={"xtol": 0.0001},
+        )
 
-        return CombinedProfile(hernquist, nfw)
+        nfw = oned.NFWHilbert(mass_at_200=root_finding_data.x,
+                              redshift_source=hernquist.redshift_source,
+                              redshift_lens=hernquist.redshift_lens)
+
+        return CombinedProfile([hernquist, nfw])
+
+    @classmethod
+    def from_effective_and_einstein_radii_and_dark_matter_fraction_within_effective_radius(cls, effective_radius, einstein_radius, dark_matter_fraction):
+
+        stellar_mass_within_r_eff = hernquist.three_dimensional_mass_enclosed_within_radii(
+            radii=hernquist.effective_radius)
+
+        dm_mass_within_r_eff_from_f_dm = np.divide(dark_matter_fraction * stellar_mass_within_r_eff,
+                                                   1 - dark_matter_fraction)
+
+        init_guess = np.array([1e13])
+
+        root_finding_data = optimize.root(
+            residuals,
+            init_guess,
+            args=(hernquist.effective_radius, dm_mass_within_r_eff_from_f_dm, hernquist.redshift_lens,
+                  hernquist.redshift_source),
+            method="hybr",
+            options={"xtol": 0.0001},
+        )
+
+        nfw = oned.NFWHilbert(mass_at_200=root_finding_data.x,
+                              redshift_source=hernquist.redshift_source,
+                              redshift_lens=hernquist.redshift_lens)
+
+        return CombinedProfile([hernquist, nfw])
 
     def density_from_radii(self, radii):
         return sum(
@@ -134,7 +175,10 @@ class CombinedProfile(abstract.AbstractProfile):
 
         return dm_mass / total_mass
 
-    def mask_radial_range_from_radii(self, lower_bound, upper_bound, radii):
+    def mask_einstein_radius_from_radii(self, width, radii):
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+        lower_bound = einstein_radius-width/2
+        upper_bound = einstein_radius+width/2
         index1 = np.argmin(np.abs(np.array(radii) - (radii[0] + lower_bound)))
         index2 = np.argmin(np.abs(np.array(radii) - (radii[0] + upper_bound)))
         weights = np.zeros(len(radii))
@@ -142,9 +186,27 @@ class CombinedProfile(abstract.AbstractProfile):
 
         return weights
 
-    def mask_two_radial_ranges_from_radii(
-        self, lower_bound_1, upper_bound_1, lower_bound_2, upper_bound_2, radii
+    def mask_effective_radius_from_radii(self, width, radii):
+        effective_radius = self.effective_radius
+        lower_bound = effective_radius - width / 2
+        upper_bound = effective_radius + width / 2
+        index1 = np.argmin(np.abs(np.array(radii) - (radii[0] + lower_bound)))
+        index2 = np.argmin(np.abs(np.array(radii) - (radii[0] + upper_bound)))
+        weights = np.zeros(len(radii))
+        weights[index1:index2] = 1
+
+        return weights
+
+    def mask_einstein_and_effective_radius_from_radii(
+        self, width_around_einstein_radius, width_around_effective_radius, radii
     ):
+        einstein_radius = self.einstein_radius_in_kpc_from_radii(radii=radii)
+        effective_radius = self.effective_radius
+        lower_bound_1 = effective_radius - width_around_effective_radius / 2
+        upper_bound_1 = effective_radius + width_around_effective_radius / 2
+        lower_bound_2 = einstein_radius - width_around_einstein_radius / 2
+        upper_bound_2 = einstein_radius + width_around_einstein_radius / 2
+
         index1 = np.argmin(np.abs(np.array(radii) - (radii[0] + lower_bound_1)))
         index2 = np.argmin(np.abs(np.array(radii) - (radii[0] + upper_bound_1)))
         index3 = np.argmin(np.abs(np.array(radii) - (radii[0] + lower_bound_2)))
