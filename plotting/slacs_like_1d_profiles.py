@@ -10,7 +10,9 @@ slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".for
 slacs = pd.read_excel(slacs_path, index_col=0)
 del slacs.index.name
 
-fig_path = "/Users/dgmt59/Documents/Plots/one_d_slacs/"
+fig_path = "/Users/dgmt59/Documents/Plots/one_d_stuff/one_d_slacs/"
+
+
 
 
 lens_name = np.array(
@@ -60,14 +62,14 @@ lens_name = np.array(
     ]
 )
 
-radii = np.arange(0.01, 50, 0.001)
+radii = np.arange(0.01, 100, 0.001)
 
-f = open("slacs_like_test_1d", "a+")
+f = open("slacs_like_test_1d_eff", "w")
 
 for i in range(len(lens_name)):
 
     baryons = l1d.Hernquist(
-        mass=10 ** slacs["log[M*/M]_chab"][lens_name[i]],
+        mass=10 ** (0.985*slacs["log[Meff/M]"][lens_name[i]]),
         effective_radius=slacs["R_eff"][lens_name[i]],
         redshift_lens=slacs["z_lens"][lens_name[i]],
         redshift_source=slacs["z_source"][lens_name[i]],
@@ -80,9 +82,7 @@ for i in range(len(lens_name)):
     
     true_profile = l1d.CombinedProfile(profiles=[baryons, DM])
 
-    mask_einstein_radius = true_profile.mask_radial_range_from_radii(
-        lower_bound=0.8, upper_bound=1.2, radii=radii
-    )
+    mask_einstein_radius = true_profile.mask_einstein_radius_from_radii(width=5, radii=radii)
     
     fit_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=mask_einstein_radius)
     
@@ -173,5 +173,6 @@ for i in range(len(lens_name)):
     plt.legend()
     plt.xlabel("Radius (kpc)", fontsize=14)
     plt.ylabel("Convergence", fontsize=14)
-    plt.savefig(fig_path + lens_name[i], bbox_inches="tight", dpi=300, transparent=True)
+    plt.savefig(fig_path + lens_name[i] + "_100kpc_eff.png", bbox_inches="tight", dpi=300, transparent=True)
     plt.close()
+f.close()

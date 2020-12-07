@@ -13,7 +13,11 @@ del slacs.index.name
 fig_path = "/Users/dgmt59/Documents/Plots/one_d_stuff/one_d_slacs/"
 
 
+radii = np.arange(0.01, 100, 0.001)
 
+
+
+masses = np.arange(10.5, 12.1, 0.02)
 
 lens_name = np.array(
     [  #'slacs0008-0004',
@@ -62,117 +66,115 @@ lens_name = np.array(
     ]
 )
 
-radii = np.arange(0.01, 100, 0.001)
+lens_name_check = np.array(["slacs0912+0029"])
 
-f = open("slacs_like_test_1d_eff", "w")
+for lens in lens_name:
+    f = open(f"{lens}_mass_test_1d", "w")
+    for mass in masses:
 
-for i in range(len(lens_name)):
+        baryons = l1d.Hernquist(
+            mass=10 **mass,
+            effective_radius=slacs["R_eff"][lens],
+            redshift_lens=slacs["z_lens"][lens],
+            redshift_source=slacs["z_source"][lens],
+        )
+        DM = l1d.NFWHilbert(
+            mass_at_200=slacs["M200"][lens],
+            redshift_lens=slacs["z_lens"][lens],
+            redshift_source=slacs["z_source"][lens],
+        )
 
-    baryons = l1d.Hernquist(
-        mass=10 ** (0.985*slacs["log[Meff/M]"][lens_name[i]]),
-        effective_radius=slacs["R_eff"][lens_name[i]],
-        redshift_lens=slacs["z_lens"][lens_name[i]],
-        redshift_source=slacs["z_source"][lens_name[i]],
-    )
-    DM = l1d.NFWHilbert(
-        mass_at_200=slacs["M200"][lens_name[i]],
-        redshift_lens=slacs["z_lens"][lens_name[i]],
-        redshift_source=slacs["z_source"][lens_name[i]],
-    )
-    
-    true_profile = l1d.CombinedProfile(profiles=[baryons, DM])
+        true_profile = l1d.CombinedProfile(profiles=[baryons, DM])
 
-    mask_einstein_radius = true_profile.mask_einstein_radius_from_radii(width=5, radii=radii)
-    
-    fit_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=mask_einstein_radius)
-    
-    fit_no_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=None)
+        mask_einstein_radius = true_profile.mask_einstein_radius_from_radii(width=5, radii=radii)
 
-    einstein_radius = true_profile.einstein_radius_in_kpc_from_radii(radii=radii)
+        fit_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=mask_einstein_radius)
 
-    effective_radius = true_profile.effective_radius
+        fit_no_mask = l1d.PowerLawFit(profile=true_profile, radii=radii, mask=None)
 
-    einstein_mass = true_profile.einstein_mass_in_solar_masses_from_radii(radii=radii)
+        einstein_radius = true_profile.einstein_radius_in_kpc_from_radii(radii=radii)
 
-    three_d_mass = true_profile.three_dimensional_mass_enclosed_within_effective_radius
+        effective_radius = true_profile.effective_radius
 
-    straightness = fit_no_mask.r_squared_value()
+        einstein_mass = true_profile.einstein_mass_in_solar_masses_from_radii(radii=radii)
 
-    lensing_slope = fit_no_mask.slope_via_lensing()
+        three_d_mass = true_profile.three_dimensional_mass_enclosed_within_effective_radius
 
-    dynamics_slope = fit_no_mask.slope_and_normalisation_via_dynamics()[1]
+        straightness = fit_no_mask.r_squared_value()
 
-    kappa_fit_slope = fit_no_mask.slope_with_error()[0]
+        lensing_slope = fit_no_mask.slope_via_lensing()
 
-    einstein_radius_best_fit = fit_no_mask.einstein_radius_with_error()[
-        0
-    ]
+        dynamics_slope = fit_no_mask.slope_and_normalisation_via_dynamics()[1]
 
-    kappa_ein_fit_slope = fit_mask.slope_with_error()[0]
+        kappa_fit_slope = fit_no_mask.slope_with_error()[0]
 
-    f_dm_eff = true_profile.dark_matter_mass_fraction_within_effective_radius
+        einstein_radius_best_fit = fit_no_mask.einstein_radius_with_error()[
+            0
+        ]
 
-    f_dm_ein = true_profile.dark_matter_mass_fraction_within_einstein_radius_from_radii(radii=radii)
+        kappa_ein_fit_slope = fit_mask.slope_with_error()[0]
 
-    f.write(
-        str(lens_name[i])
-        + " "
-        + str(einstein_radius)
-        + " "
-        + str(einstein_radius_best_fit)
-        + " "
-        + str(effective_radius)
-        + " "
-        + str(f_dm_eff)
-        + " "
-        + str(f_dm_ein)
-        + " "
-        + str(three_d_mass)
-        + " "
-        + str(einstein_mass)
-        + " "
-        + str(straightness)
-        + " "
-        + str(lensing_slope)
-        + " "
-        + str(dynamics_slope)
-        + " "
-        + str(kappa_fit_slope)
-        + " "
-        + str(kappa_ein_fit_slope)
-        + " "
-        + "\n"
-    )
+        f_dm_eff = true_profile.dark_matter_mass_fraction_within_effective_radius
 
-    kappa_baryons = baryons.convergence_from_radii(radii=radii)
-    kappa_DM = DM.convergence_from_radii(radii=radii)
-    kappa_total = true_profile.convergence_from_radii(radii=radii)
-    kappa_dynamics = fit_no_mask.convergence_via_dynamics()
-    kappa_lensing = fit_no_mask.convergence_via_lensing()
-    kappa_best_fit = fit_no_mask.convergence()
+        f_dm_ein = true_profile.dark_matter_mass_fraction_within_einstein_radius_from_radii(radii=radii)
 
-    fig1 = plt.figure(1)
-    plt.loglog(
-        radii, kappa_baryons, "--", label="baryons", alpha=0.5, color="lightcoral"
-    )
-    plt.loglog(
-        radii, kappa_DM, "--", label="dark matter", alpha=0.5, color="lightskyblue"
-    )
-    plt.axvline(x=einstein_radius, color="grey", alpha=0.5)
-    plt.axvline(x=effective_radius, color="darkslategrey", alpha=0.5)
-    plt.loglog(
-        radii, kappa_best_fit, "-.", label="best fit kappa", color="navy", alpha=0.8
-    )
-    plt.loglog(
-        radii, kappa_lensing, "-.", label="kappa via lensing", color="blue", alpha=0.8
-    )
-    plt.loglog(
-        radii, kappa_dynamics, "-.", label="kappa via dyn", color="cyan", alpha=0.8
-    )
-    plt.loglog(radii, kappa_total, label="total", color="plum")
-    plt.legend()
-    plt.xlabel("Radius (kpc)", fontsize=14)
-    plt.ylabel("Convergence", fontsize=14)
-    plt.savefig(fig_path + lens_name[i] + "_100kpc_eff.png", bbox_inches="tight", dpi=300, transparent=True)
-    plt.close()
-f.close()
+        f.write(str(mass)
+            + " "
+            + str(einstein_radius)
+            + " "
+            + str(einstein_radius_best_fit)
+            + " "
+            + str(effective_radius)
+            + " "
+            + str(f_dm_eff)
+            + " "
+            + str(f_dm_ein)
+            + " "
+            + str(three_d_mass)
+            + " "
+            + str(einstein_mass)
+            + " "
+            + str(straightness)
+            + " "
+            + str(lensing_slope)
+            + " "
+            + str(dynamics_slope)
+            + " "
+            + str(kappa_fit_slope)
+            + " "
+            + str(kappa_ein_fit_slope)
+            + " "
+            + "\n"
+        )
+
+       # kappa_baryons = baryons.convergence_from_radii(radii=radii)
+       # kappa_DM = DM.convergence_from_radii(radii=radii)
+       # kappa_total = true_profile.convergence_from_radii(radii=radii)
+       # kappa_dynamics = fit_no_mask.convergence_via_dynamics()
+       # kappa_lensing = fit_no_mask.convergence_via_lensing()
+       # kappa_best_fit = fit_no_mask.convergence()
+    f.close()
+  # fig1 = plt.figure(1)
+  # plt.loglog(
+  #     radii, kappa_baryons, "--", label="baryons", alpha=0.5, color="lightcoral"
+  # )
+  # plt.loglog(
+  #     radii, kappa_DM, "--", label="dark matter", alpha=0.5, color="lightskyblue"
+  # )
+  # plt.axvline(x=einstein_radius, color="grey", alpha=0.5)
+  # plt.axvline(x=effective_radius, color="darkslategrey", alpha=0.5)
+  # plt.loglog(
+  #     radii, kappa_best_fit, "-.", label="best fit kappa", color="navy", alpha=0.8
+  # )
+  # plt.loglog(
+  #     radii, kappa_lensing, "-.", label="kappa via lensing", color="blue", alpha=0.8
+  # )
+  # plt.loglog(
+  #     radii, kappa_dynamics, "-.", label="kappa via dyn", color="cyan", alpha=0.8
+  # )
+  # plt.loglog(radii, kappa_total, label="total", color="plum")
+  # plt.legend()
+  # plt.xlabel("Radius (kpc)", fontsize=14)
+  # plt.ylabel("Convergence", fontsize=14)
+  #  plt.savefig(f"{fig_path}{lens_name}_mass_{mass}.png", bbox_inches="tight", dpi=300, transparent=True)
+  # plt.close()

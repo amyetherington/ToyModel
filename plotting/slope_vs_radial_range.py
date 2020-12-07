@@ -1,86 +1,102 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import one_d_profiles as profile
+import lens1d as l1d
+import os
+import pandas as pd
 
-plots_path = "/Users/dgmt59/Documents/Plots/slope_v_radial_range/"
+fig_path = "/Users/dgmt59/Documents/Plots/one_d_slacs/"
 
-radii = np.arange(0.2, 10, 0.0015)
-
-baryons = profile.SphericalPowerLaw(slope=2.2, einstein_radius=1.2)
-DM = profile.NFW(kappa_s=0.22, scale_radius=4.6)
-true_profile = profile.CombinedProfile(mass_profiles=[baryons, DM])
-
-upper_bound = np.arange(1.1, 1.9, 0.01)
-lower_bound = np.flip(np.arange(0.1, 1, 0.01))
-
-kappa_best_fit_slope_from_alpha = []
-kappa_best_fit_slope = []
-kappa_best_fit_einstein_mass_from_alpha = []
-kappa_best_fit_einstein_mass = []
-radial_range = []
-
-fig_path = (
-    plots_path
-    + "slope_"
-    + str(baryons.slope)
-    + "__ein_"
-    + str(baryons.einstein_radius)
-    + "__scale_r_"
-    + str(DM.scale_radius)
-    + "__kappa_s_"
-    + str(DM.kappa_s)
+slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".format(
+    os.path.dirname(os.path.realpath(__file__))
 )
+slacs = pd.read_excel(slacs_path, index_col=0)
+del slacs.index.name
 
-for i in range(len(upper_bound)):
+lens_name = "slacs0728+3835"
 
-    kappa_best_fit_slope.append(
-        true_profile.inferred_slope_with_error_between_radii_from_radii(
-            radii=radii, lower_bound=lower_bound[i], upper_bound=upper_bound[i]
-        )[0]
-    )
-    kappa_best_fit_slope_from_alpha.append(
-        true_profile.inferred_slope_via_deflections_between_radii_from_radii(
-            radii=radii, lower_bound=lower_bound[i], upper_bound=upper_bound[i]
-        )
-    )
+radii = np.arange(0.01, 50, 0.001)
 
-    kappa_best_fit_einstein_mass.append(
-        true_profile.best_fit_einstein_mass_in_solar_masses_between_radii_from_radii_and_redshifts(
-            radii=radii,
-            lower_bound=lower_bound[i],
-            upper_bound=upper_bound[i],
-            redshift_lens=0.3,
-            redshift_source=1.0,
-        )[
-            0
-        ]
-    )
-    kappa_best_fit_einstein_mass_from_alpha.append(
-        true_profile.best_fit_einstein_mass_in_solar_masses_via_deflections_between_radii_from_radii_and_redshifts(
-            radii=radii,
-            lower_bound=lower_bound[i],
-            upper_bound=upper_bound[i],
-            redshift_lens=0.3,
-            redshift_source=1.0,
-        )
+DM_Hilb = l1d.NFWHilbert(
+        mass_at_200=slacs["M200"][lens_name],
+        redshift_lens=slacs["z_lens"][lens_name],
+        redshift_source=slacs["z_source"][lens_name],
     )
 
-    radial_range.append(upper_bound[i] - lower_bound[i])
+Hernquist = l1d.Hernquist(
+        mass=10 ** slacs["log[M*/M]_chab"][lens_name],
+        effective_radius=slacs["R_eff"][lens_name],
+        redshift_lens=slacs["z_lens"][lens_name],
+        redshift_source=slacs["z_source"][lens_name],
+    )
+
+true_profile = l1d.CombinedProfile(profiles=[Hernquist, DM_Hilb])
+
+kappa_baryons = Hernquist.convergence_from_radii(radii=radii)
+kappa_DM = DM_Hilb.convergence_from_radii(radii=radii)
+einstein_radius = true_profile.einstein_radius_in_kpc_from_radii(radii=radii)
+effective_radius = true_profile.effective_radius
+kappa_total = true_profile.convergence_from_radii(radii=radii)
+
+fit = l1d.PowerLawFit(profile=true_profile, mask=None, radii=radii)
+
+lens_slope = fit.slope_via_lensing()
+dyn_slope = fit.slope_and_normalisation_via_dynamics()[1]
+kappa_lensing = fit.convergence_via_lensing()
+kappa_dynamics = fit.convergence_via_dynamics()
+kappa_best_fit = fit.convergence()
+
+radial_range = np.arange(0.2, 20, 0.1)
+
+slope_ein = []
+slope_eff = []
+
+for i in range(len(radial_range)):
+    mask_ein = true_profile.mask_einstein_radius_from_radii(radii=radii, width=radial_range[i])
+    mask_eff = true_profile.mask_effective_radius_from_radii(radii=radii, width=radial_range[i])
+
+    fit_ein = l1d.PowerLawFit(profile=true_profile, mask=mask_ein, radii=radii)
+    fit_eff = l1d.PowerLawFit(profile=true_profile, mask=mask_eff, radii=radii)
+
+    slope_ein.append(fit_ein.slope_with_error()[0])
+    slope_eff.append(fit_eff.slope_with_error()[0])
+
+
+
 
 fig1 = plt.figure(1)
-plt.plot(radial_range, kappa_best_fit_slope, label="best fit kappa")
-plt.plot(radial_range, kappa_best_fit_slope_from_alpha, label="best fit alpha")
-plt.xlabel("Radial Range (Fraction of Einstein Radius)", fontsize=14)
-plt.ylabel("Slope", fontsize=14)
+plt.loglog(
+    radii, kappa_baryons, "--", label="baryons", alpha=0.5, color="lightcoral"
+)
+plt.loglog(
+    radii, kappa_DM, "--", label="dark matter", alpha=0.5, color="lightskyblue"
+)
+plt.axvline(x=einstein_radius, color="grey", alpha=0.5)
+plt.axvline(x=effective_radius, color="darkslategrey", alpha=0.5)
+plt.loglog(
+    radii, kappa_best_fit, "-.", label="best fit kappa", color="navy", alpha=0.8
+)
+plt.loglog(
+    radii, kappa_lensing, "-.", label="kappa via lensing", color="blue", alpha=0.8
+)
+plt.loglog(
+    radii, kappa_dynamics, "-.", label="kappa via dyn", color="cyan", alpha=0.8
+)
+plt.loglog(radii, kappa_total, label="total", color="plum")
 plt.legend()
-plt.savefig(plots_path + "_slopes", bbox_inches="tight", dpi=300, transparent=True)
+plt.xlabel("Radius (kpc)", fontsize=14)
+plt.ylabel("Convergence", fontsize=14)
 
+#plt.savefig(fig_path + lens_name + "_radial_range_test.png", bbox_inches="tight", dpi=300, transparent=True)
 
 fig2 = plt.figure(2)
-plt.plot(radial_range, kappa_best_fit_einstein_mass, label="best fit kappa")
-plt.plot(radial_range, kappa_best_fit_einstein_mass_from_alpha, label="best fit alpha")
-plt.xlabel("Radial Range (Fraction of Einstein Radius)", fontsize=14)
-plt.ylabel("Einstein Mass (Solar Masses)", fontsize=14)
+plt.axhline(lens_slope, color="grey", ls="--")
+plt.axhline(dyn_slope, color="darkslategrey", ls="-.")
+plt.plot(radial_range, slope_ein, label="mask around einstein radius")
+plt.plot(radial_range, slope_eff, label="mask around effective radius")
+plt.xlabel("Radial Range (kpc)", fontsize=14)
+plt.ylabel("Slope", fontsize=14)
 plt.legend()
-plt.savefig(plots_path + "_masses", bbox_inches="tight", dpi=300, transparent=True)
+plt.savefig(fig_path + lens_name + "slope_v_radial_range.png", bbox_inches="tight", dpi=300, transparent=True)
 plt.show()
+
+
