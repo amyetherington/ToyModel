@@ -82,7 +82,7 @@ plt.legend()
 plt.ylim(ymin=1e3, ymax=1e11)
 plt.xlabel("Radius (kpc)", fontsize=14)
 plt.ylabel(r"$\rho$", fontsize=14)
-plt.savefig(fig_path + "density_stronger_winds.png", bbox_inches="tight", dpi=300)
+#plt.savefig(fig_path + "density_stronger_winds.png", bbox_inches="tight", dpi=300)
 plt.show()
 
 
@@ -103,7 +103,7 @@ plt.legend()
 plt.ylim(ymin=1e3, ymax=1e11)
 plt.xlabel("Radius (kpc)", fontsize=14)
 plt.ylabel(r"$\rho$", fontsize=14)
-plt.savefig(fig_path + "density_gamma_3.png", bbox_inches="tight", dpi=300)
+#plt.savefig(fig_path + "density_gamma_3.png", bbox_inches="tight", dpi=300)
 plt.show()
 
 

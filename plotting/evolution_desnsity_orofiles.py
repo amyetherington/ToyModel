@@ -89,7 +89,7 @@ plt.loglog(radii, rho_isothermal, "-.", label="isothermal", color="grey")
 plt.legend()
 plt.xlabel("Radius (kpc)", fontsize=14)
 plt.ylabel(r"$\rho$", fontsize=14)
-plt.savefig(fig_path + "density.png", bbox_inches="tight", dpi=300, transparent=True)
+#plt.savefig(fig_path + "density.png", bbox_inches="tight", dpi=300, transparent=True)
 
 fig4 = plt.figure(4)
 plt.loglog(
@@ -109,7 +109,7 @@ plt.loglog(radii, rho_isothermal, "-.", label="isothermal", color="grey")
 plt.legend()
 plt.xlabel("Radius (kpc)", fontsize=14)
 plt.ylabel(r"$\rho$", fontsize=14)
-plt.savefig(fig_path + "kappa.png", bbox_inches="tight", dpi=300, transparent=True)
+#plt.savefig(fig_path + "kappa.png", bbox_inches="tight", dpi=300, transparent=True)
 
 fig5 = plt.figure(5)
 plt.loglog(
@@ -123,6 +123,6 @@ plt.loglog(radii, rho_isothermal, "-.", label="isothermal", color="grey")
 plt.legend()
 plt.xlabel("Radius (kpc)", fontsize=14)
 plt.ylabel(r"$\rho$", fontsize=14)
-plt.savefig(fig_path + "density_not_cored.png", bbox_inches="tight", dpi=300, transparent=True)
+#plt.savefig(fig_path + "density_not_cored.png", bbox_inches="tight", dpi=300, transparent=True)
 
 plt.show()

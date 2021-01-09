@@ -56,7 +56,7 @@ class PowerLawFit:
 
         mass_dyn = self.profile.three_dimensional_mass_enclosed_within_radii(radii=r_dyn)
 
-        init_guess = np.array([7, 1.9])
+        init_guess = np.array([7, 2.1])
 
         root_finding_data = optimize.root(
             vector_residuals,

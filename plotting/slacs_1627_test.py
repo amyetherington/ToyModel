@@ -8,11 +8,12 @@ slacs_path = "{}/../../autolens_slacs_pre_v_1/dataset/slacs_data_table.xlsx".for
     os.path.dirname(os.path.realpath(__file__))
 )
 slacs = pd.read_excel(slacs_path, index_col=0)
+print(slacs)
 del slacs.index.name
-
+print(slacs)
 fig_path = "/Users/dgmt59/Documents/Plots/one_d_stuff/one_d_slacs/"
 
-
+stop
 radii = np.arange(0.01, 100, 0.001)
 
 

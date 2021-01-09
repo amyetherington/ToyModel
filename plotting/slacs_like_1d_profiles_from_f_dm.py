@@ -65,23 +65,20 @@ lens_name = np.array(
 
 radii = np.arange(0.01, 100, 0.001)
 
-f = open("slacs_like_test", "w")
+f = open("slacs_like_test_f_dm", "w")
 
 for i in range(len(lens_name)):
 
     baryons = l1d.Hernquist(
-        mass=10 ** (slacs["log[Meff/M]"][lens_name[i]]),
+        mass=10 ** (slacs["log[M*/M]_chab"][lens_name[i]]),
         effective_radius=slacs["R_eff"][lens_name[i]],
         redshift_lens=slacs["z_lens"][lens_name[i]],
         redshift_source=slacs["z_source"][lens_name[i]],
     )
-    DM = l1d.NFWHilbert(
-        mass_at_200=slacs["M200"][lens_name[i]],
-        redshift_lens=slacs["z_lens"][lens_name[i]],
-        redshift_source=slacs["z_source"][lens_name[i]],
-    )
     
-    true_profile = l1d.CombinedProfile(profiles=[baryons, DM])
+    true_profile = l1d.CombinedProfile.from_hernquist_and_dark_matter_fraction_within_effective_radius(
+        hernquist=baryons, dark_matter_fraction=slacs["f_dm_chab"][lens_name[i]]
+    )
 
     mask_einstein_radius = true_profile.mask_einstein_radius_from_radii(width=5, radii=radii)
     
@@ -108,44 +105,42 @@ for i in range(len(lens_name)):
     einstein_radius_best_fit = fit_no_mask.einstein_radius_with_error()[
         0
     ]
+
     kappa_ein_fit_slope = fit_mask.slope_with_error()[0]
 
     f_dm_eff = true_profile.dark_matter_mass_fraction_within_effective_radius
 
     f_dm_ein = true_profile.dark_matter_mass_fraction_within_einstein_radius_from_radii(radii=radii)
-    
-    if dynamics_slope==2.1:
-        pass
-    else:
-        f.write(
-            str(lens_name[i])
-            + " "
-            + str(einstein_radius)
-            + " "
-            + str(einstein_radius_best_fit)
-            + " "
-            + str(effective_radius)
-            + " "
-            + str(f_dm_eff)
-            + " "
-            + str(f_dm_ein)
-            + " "
-            + str(three_d_mass)
-            + " "
-            + str(einstein_mass)
-            + " "
-            + str(straightness)
-            + " "
-            + str(lensing_slope)
-            + " "
-            + str(dynamics_slope)
-            + " "
-            + str(kappa_fit_slope)
-            + " "
-            + str(kappa_ein_fit_slope)
-            + " "
-            + "\n"
-        )
+
+    f.write(
+        str(lens_name[i])
+        + " "
+        + str(einstein_radius)
+        + " "
+        + str(einstein_radius_best_fit)
+        + " "
+        + str(effective_radius)
+        + " "
+        + str(f_dm_eff)
+        + " "
+        + str(f_dm_ein)
+        + " "
+        + str(three_d_mass)
+        + " "
+        + str(einstein_mass)
+        + " "
+        + str(straightness)
+        + " "
+        + str(lensing_slope)
+        + " "
+        + str(dynamics_slope)
+        + " "
+        + str(kappa_fit_slope)
+        + " "
+        + str(kappa_ein_fit_slope)
+        + " "
+        + "\n"
+    )
 
 #    kappa_baryons = baryons.convergence_from_radii(radii=radii)
 #    kappa_DM = DM.convergence_from_radii(radii=radii)

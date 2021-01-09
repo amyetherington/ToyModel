@@ -163,4 +163,11 @@ ax1.set_xlim(lims1)
 ax1.set_ylim(lims1)
 plt.savefig(f"{fig_path}slope_v_slope.png", bbox_inches='tight', dpi=300)
 
+
+print(len(data_2["lens_slope"]))
+
+fig9, (ax1) = plt.subplots(figsize=(5,5))
+plt.hist(data_2["dyn_slope"], 8, color="orchid", alpha=0.4)
+plt.hist(data_2["lens_slope"], 8, color="deepskyblue", alpha=0.4)
 plt.show()
+
